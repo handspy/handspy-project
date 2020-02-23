@@ -1,0 +1,44 @@
+{
+    "name": "ProjectPermission",
+    "fields": [
+        {
+            "fieldName": "user",
+            "javadoc": "User to which this permission is assigned.",
+            "fieldType": "Long",
+            "fieldValidateRules": [
+                "required"
+            ]
+        },
+        {
+            "fieldName": "permission",
+            "javadoc": "The permission of this entry.",
+            "fieldType": "Integer"
+        }
+    ],
+    "relationships": [
+        {
+            "relationshipType": "many-to-one",
+            "otherEntityName": "project",
+            "otherEntityRelationshipName": "projectPermission",
+            "relationshipValidateRules": "required",
+            "javadoc": "A permission (project) refers to a project.",
+            "relationshipName": "project",
+            "otherEntityField": "id"
+        }
+    ],
+    "changelogDate": "20200223175418",
+    "javadoc": "Permissions of a user towards a project.\\n\\n@author José Carlos Paiva",
+    "entityTableName": "project_permission",
+    "dto": "mapstruct",
+    "pagination": "no",
+    "service": "serviceImpl",
+    "jpaMetamodelFiltering": true,
+    "fluentMethods": true,
+    "readOnly": false,
+    "clientRootFolder": "",
+    "applications": [
+        "gateway",
+        "project"
+    ],
+    "microserviceName": "project"
+}

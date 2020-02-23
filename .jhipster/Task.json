@@ -1,0 +1,67 @@
+{
+    "name": "Task",
+    "fields": [
+        {
+            "fieldName": "name",
+            "javadoc": "Name of the task",
+            "fieldType": "String",
+            "fieldValidateRules": [
+                "required"
+            ]
+        },
+        {
+            "fieldName": "description",
+            "javadoc": "Details about the task",
+            "fieldType": "String",
+            "fieldValidateRules": [
+                "maxlength"
+            ],
+            "fieldValidateRulesMaxlength": "500"
+        },
+        {
+            "fieldName": "startDate",
+            "javadoc": "Date in which the task starts",
+            "fieldType": "LocalDate"
+        },
+        {
+            "fieldName": "endDate",
+            "javadoc": "Date in which the task ends",
+            "fieldType": "LocalDate"
+        }
+    ],
+    "relationships": [
+        {
+            "relationshipType": "many-to-one",
+            "otherEntityName": "project",
+            "otherEntityRelationshipName": "task",
+            "relationshipValidateRules": "required",
+            "javadoc": "A task belongs to a project.",
+            "relationshipName": "project",
+            "otherEntityField": "id"
+        },
+        {
+            "relationshipType": "many-to-many",
+            "otherEntityName": "label",
+            "otherEntityRelationshipName": "tasks",
+            "javadoc": "A participant may belong to many groups.",
+            "relationshipName": "labels",
+            "otherEntityField": "id",
+            "ownerSide": true
+        }
+    ],
+    "changelogDate": "20200223175518",
+    "javadoc": "The Task entity.\\n\\n@author José Carlos Paiva",
+    "entityTableName": "task",
+    "dto": "mapstruct",
+    "pagination": "infinite-scroll",
+    "service": "serviceImpl",
+    "jpaMetamodelFiltering": true,
+    "fluentMethods": true,
+    "readOnly": false,
+    "clientRootFolder": "",
+    "applications": [
+        "gateway",
+        "project"
+    ],
+    "microserviceName": "project"
+}

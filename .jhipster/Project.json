@@ -1,0 +1,71 @@
+{
+    "name": "Project",
+    "fields": [
+        {
+            "fieldName": "name",
+            "javadoc": "Name of the project",
+            "fieldType": "String",
+            "fieldValidateRules": [
+                "required"
+            ]
+        },
+        {
+            "fieldName": "description",
+            "javadoc": "Details about the project",
+            "fieldType": "String",
+            "fieldValidateRules": [
+                "maxlength"
+            ],
+            "fieldValidateRulesMaxlength": "500"
+        },
+        {
+            "fieldName": "image",
+            "javadoc": "Image of the project for visual identification",
+            "fieldType": "byte[]",
+            "fieldTypeBlobContent": "image"
+        },
+        {
+            "fieldName": "startDate",
+            "javadoc": "Date in which the project starts",
+            "fieldType": "LocalDate"
+        },
+        {
+            "fieldName": "endDate",
+            "javadoc": "Date in which the project ends",
+            "fieldType": "LocalDate"
+        },
+        {
+            "fieldName": "status",
+            "javadoc": "Status of the project",
+            "fieldType": "ProjectStatus",
+            "fieldValues": "DRAFT,OPEN,CLOSED,DISCARDED",
+            "fieldValidateRules": [
+                "required"
+            ]
+        },
+        {
+            "fieldName": "owner",
+            "javadoc": "Owner of the project",
+            "fieldType": "Long",
+            "fieldValidateRules": [
+                "required"
+            ]
+        }
+    ],
+    "relationships": [],
+    "changelogDate": "20200223175318",
+    "javadoc": "The Project entity.\\n\\n@author José Carlos Paiva",
+    "entityTableName": "project",
+    "dto": "mapstruct",
+    "pagination": "infinite-scroll",
+    "service": "serviceImpl",
+    "jpaMetamodelFiltering": true,
+    "fluentMethods": true,
+    "readOnly": false,
+    "clientRootFolder": "",
+    "applications": [
+        "gateway",
+        "project"
+    ],
+    "microserviceName": "project"
+}

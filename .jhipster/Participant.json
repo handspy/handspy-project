@@ -1,0 +1,76 @@
+{
+    "name": "Participant",
+    "fields": [
+        {
+            "fieldName": "name",
+            "javadoc": "Name of the participant",
+            "fieldType": "String",
+            "fieldValidateRules": [
+                "required"
+            ]
+        },
+        {
+            "fieldName": "gender",
+            "javadoc": "Gender of the participant",
+            "fieldType": "Gender",
+            "fieldValues": "MALE,FEMALE,OTHER"
+        },
+        {
+            "fieldName": "birthdate",
+            "javadoc": "Birth date of the participant",
+            "fieldType": "LocalDate"
+        },
+        {
+            "fieldName": "handedness",
+            "javadoc": "Means used by participant for handwriting",
+            "fieldType": "HandwritingMeans",
+            "fieldValues": "LEFT_HAND,RIGHT_HAND,OTHER"
+        },
+        {
+            "fieldName": "additionalInfo",
+            "javadoc": "Additional information about the participant",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "image",
+            "javadoc": "Image of the participant for visual identification",
+            "fieldType": "byte[]",
+            "fieldTypeBlobContent": "image"
+        }
+    ],
+    "relationships": [
+        {
+            "relationshipType": "many-to-one",
+            "otherEntityName": "project",
+            "otherEntityRelationshipName": "participant",
+            "relationshipValidateRules": "required",
+            "javadoc": "A participant belongs to a project.",
+            "relationshipName": "project",
+            "otherEntityField": "id"
+        },
+        {
+            "relationshipType": "many-to-many",
+            "otherEntityName": "label",
+            "otherEntityRelationshipName": "participants",
+            "javadoc": "A participant may be associated with several labels.",
+            "relationshipName": "labels",
+            "otherEntityField": "id",
+            "ownerSide": true
+        }
+    ],
+    "changelogDate": "20200223175718",
+    "javadoc": "Information about a participant involved in the experiment. Participants are\\norganized in groups, and part of a project.\\n\\n@author José Carlos Paiva",
+    "entityTableName": "participant",
+    "dto": "mapstruct",
+    "pagination": "infinite-scroll",
+    "service": "serviceImpl",
+    "jpaMetamodelFiltering": true,
+    "fluentMethods": true,
+    "readOnly": false,
+    "clientRootFolder": "",
+    "applications": [
+        "gateway",
+        "project"
+    ],
+    "microserviceName": "project"
+}
