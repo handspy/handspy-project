@@ -65,10 +65,6 @@ public class ParticipantDTO implements Serializable {
     @ApiModelProperty(value = "A participant belongs to a project.")
 
     private Long projectId;
-    /**
-     * A participant may be associated with several labels.
-     */
-    @ApiModelProperty(value = "A participant may be associated with several labels.")
 
     private Set<LabelDTO> labels = new HashSet<>();
 

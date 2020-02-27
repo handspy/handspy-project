@@ -25,14 +25,14 @@
     "buildTool": "gradle",
     "serverPort": "8081",
     "jhipsterVersion": "6.7.1",
-    "creationTimestamp": 1582480320123,
+    "creationTimestamp": 1582488840725,
     "skipUserManagement": true,
     "clientPackageManager": "npm",
     "embeddableLaunchScript": false,
     "entitySuffix": "",
     "dtoSuffix": "DTO",
-    "otherModules": [],
-    "blueprints": []
+    "blueprints": [],
+    "otherModules": []
   },
   "entities": ["Project", "Task", "Label", "Participant", "ProjectPermission"]
 }

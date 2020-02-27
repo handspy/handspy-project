@@ -36,14 +36,6 @@ public class LabelDTO implements Serializable {
     @ApiModelProperty(value = "A label belongs to a project.")
 
     private Long projectId;
-    /**
-     * A label may have many participants.
-     */
-    @ApiModelProperty(value = "A label may have many participants.")
-    /**
-     * A group may have many participants.
-     */
-    @ApiModelProperty(value = "A group may have many participants.")
 
     public Long getId() {
         return id;

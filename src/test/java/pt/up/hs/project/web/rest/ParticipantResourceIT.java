@@ -265,7 +265,7 @@ public class ParticipantResourceIT {
             .andExpect(jsonPath("$.[*].imageContentType").value(hasItem(DEFAULT_IMAGE_CONTENT_TYPE)))
             .andExpect(jsonPath("$.[*].image").value(hasItem(Base64Utils.encodeToString(DEFAULT_IMAGE))));
     }
-    
+
     @SuppressWarnings({"unchecked"})
     public void getAllParticipantsWithEagerRelationshipsIsEnabled() throws Exception {
         ParticipantResource participantResource = new ParticipantResource(participantServiceMock, participantQueryService);
@@ -338,7 +338,6 @@ public class ParticipantResourceIT {
         defaultParticipantShouldNotBeFound("id.lessThan=" + id);
     }
 
-
     @Test
     @Transactional
     public void getAllParticipantsByNameIsEqualToSomething() throws Exception {
@@ -390,7 +389,8 @@ public class ParticipantResourceIT {
         // Get all the participantList where name is null
         defaultParticipantShouldNotBeFound("name.specified=false");
     }
-                @Test
+
+    @Test
     @Transactional
     public void getAllParticipantsByNameContainsSomething() throws Exception {
         // Initialize the database

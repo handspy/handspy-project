@@ -52,7 +52,6 @@
             "relationshipType": "many-to-many",
             "otherEntityName": "label",
             "otherEntityRelationshipName": "participants",
-            "javadoc": "A participant may be associated with several labels.",
             "relationshipName": "labels",
             "otherEntityField": "id",
             "ownerSide": true

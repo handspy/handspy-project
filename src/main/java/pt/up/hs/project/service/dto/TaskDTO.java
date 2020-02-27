@@ -49,10 +49,6 @@ public class TaskDTO implements Serializable {
     @ApiModelProperty(value = "A task belongs to a project.")
 
     private Long projectId;
-    /**
-     * A participant may belong to many groups.
-     */
-    @ApiModelProperty(value = "A participant may belong to many groups.")
 
     private Set<LabelDTO> labels = new HashSet<>();
 

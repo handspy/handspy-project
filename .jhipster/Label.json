@@ -36,7 +36,6 @@
             "relationshipType": "many-to-many",
             "otherEntityName": "participant",
             "otherEntityRelationshipName": "labels",
-            "javadoc": "A label may have many participants.",
             "relationshipName": "participants",
             "otherEntityField": "id",
             "ownerSide": false
@@ -45,7 +44,6 @@
             "relationshipType": "many-to-many",
             "otherEntityName": "task",
             "otherEntityRelationshipName": "labels",
-            "javadoc": "A group may have many participants.",
             "relationshipName": "tasks",
             "otherEntityField": "id",
             "ownerSide": false

@@ -82,9 +82,6 @@ public class Participant implements Serializable {
     @JsonIgnoreProperties("participants")
     private Project project;
 
-    /**
-     * A participant may be associated with several labels.
-     */
     @ManyToMany
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     @JoinTable(name = "participant_labels",

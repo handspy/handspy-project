@@ -61,9 +61,6 @@ public class Task implements Serializable {
     @JsonIgnoreProperties("tasks")
     private Project project;
 
-    /**
-     * A participant may belong to many groups.
-     */
     @ManyToMany
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     @JoinTable(name = "task_labels",

@@ -43,7 +43,6 @@
             "relationshipType": "many-to-many",
             "otherEntityName": "label",
             "otherEntityRelationshipName": "tasks",
-            "javadoc": "A participant may belong to many groups.",
             "relationshipName": "labels",
             "otherEntityField": "id",
             "ownerSide": true

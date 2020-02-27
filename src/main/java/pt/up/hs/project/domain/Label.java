@@ -51,17 +51,11 @@ public class Label implements Serializable {
     @JsonIgnoreProperties("labels")
     private Project project;
 
-    /**
-     * A label may have many participants.
-     */
     @ManyToMany(mappedBy = "labels")
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     @JsonIgnore
     private Set<Participant> participants = new HashSet<>();
 
-    /**
-     * A group may have many participants.
-     */
     @ManyToMany(mappedBy = "labels")
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     @JsonIgnore
