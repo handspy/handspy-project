@@ -2,10 +2,11 @@ package pt.up.hs.project.service.dto;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import javax.validation.constraints.*;
-import java.io.Serializable;
-import java.util.Objects;
 import pt.up.hs.project.domain.enumeration.ProjectStatus;
+
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import java.util.Objects;
 
 /**
  * A DTO for the {@link pt.up.hs.project.domain.Project} entity.

@@ -9,7 +9,7 @@ import feign.RequestInterceptor;
 public class OAuth2UserClientFeignConfiguration {
 
     @Bean(name = "userFeignClientInterceptor")
-    public RequestInterceptor getUserFeignClientInterceptor() throws IOException {
+    public RequestInterceptor getUserFeignClientInterceptor() {
         return new UserFeignClientInterceptor();
     }
 }
