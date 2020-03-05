@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.ColumnDefault;
 
 import javax.persistence.*;
 import javax.validation.constraints.*;
@@ -13,7 +14,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * The Label entity.\n\n@author José Carlos Paiva
+ * The Label entity.
+ *
+ * @author José Carlos Paiva
  */
 @Entity
 @Table(name = "label")
@@ -38,25 +41,29 @@ public class Label implements Serializable {
     /**
      * Color of the label
      */
-    @NotNull
     @Size(max = 20)
-    @Column(name = "color", length = 20, nullable = false)
+    @Column(name = "color", length = 20)
+    @ColumnDefault("white")
     private String color;
 
     /**
      * A label belongs to a project.
      */
-    @ManyToOne(optional = false)
-    @NotNull
-    @JsonIgnoreProperties("labels")
+    @JoinColumn(name = "project_id", insertable = false, updatable = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JsonIgnore
     private Project project;
 
-    @ManyToMany(mappedBy = "labels")
+    @Column(name = "project_id")
+    @NotNull
+    private Long projectId;
+
+    @ManyToMany(mappedBy = "labels", fetch = FetchType.LAZY)
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     @JsonIgnore
     private Set<Participant> participants = new HashSet<>();
 
-    @ManyToMany(mappedBy = "labels")
+    @ManyToMany(mappedBy = "labels", fetch = FetchType.LAZY)
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     @JsonIgnore
     private Set<Task> tasks = new HashSet<>();
@@ -100,13 +107,17 @@ public class Label implements Serializable {
         return project;
     }
 
-    public Label project(Project project) {
-        this.project = project;
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public Label projectId(Long projectId) {
+        this.projectId = projectId;
         return this;
     }
 
-    public void setProject(Project project) {
-        this.project = project;
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
     }
 
     public Set<Participant> getParticipants() {

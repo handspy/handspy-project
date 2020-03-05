@@ -4,19 +4,20 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.time.LocalDate;
 import javax.validation.constraints.*;
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Objects;
 import javax.persistence.Lob;
 import pt.up.hs.project.domain.enumeration.Gender;
-import pt.up.hs.project.domain.enumeration.HandwritingMeans;
+import pt.up.hs.project.domain.enumeration.HandwritingMean;
 
 /**
  * A DTO for the {@link pt.up.hs.project.domain.Participant} entity.
  */
-@ApiModel(description = "Information about a participant involved in the experiment. Participants are\norganized in groups, and part of a project.\n\n@author José Carlos Paiva")
-public class ParticipantDTO implements Serializable {
+@ApiModel(description = "Information about a participant involved in the" +
+    " experiment. Participants are organized in groups, and part of a pr" +
+    "oject.\n\n@author José Carlos Paiva")
+public class ParticipantDTO extends AbstractAuditingDTO {
 
     private Long id;
 
@@ -43,7 +44,7 @@ public class ParticipantDTO implements Serializable {
      * Means used by participant for handwriting
      */
     @ApiModelProperty(value = "Means used by participant for handwriting")
-    private HandwritingMeans handedness;
+    private HandwritingMean handedness;
 
     /**
      * Additional information about the participant
@@ -59,11 +60,11 @@ public class ParticipantDTO implements Serializable {
     private byte[] image;
 
     private String imageContentType;
+
     /**
      * A participant belongs to a project.
      */
     @ApiModelProperty(value = "A participant belongs to a project.")
-
     private Long projectId;
 
     private Set<LabelDTO> labels = new HashSet<>();
@@ -100,11 +101,11 @@ public class ParticipantDTO implements Serializable {
         this.birthdate = birthdate;
     }
 
-    public HandwritingMeans getHandedness() {
+    public HandwritingMean getHandedness() {
         return handedness;
     }
 
-    public void setHandedness(HandwritingMeans handedness) {
+    public void setHandedness(HandwritingMean handedness) {
         this.handedness = handedness;
     }
 

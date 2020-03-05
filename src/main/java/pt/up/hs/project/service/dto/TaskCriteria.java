@@ -2,6 +2,7 @@ package pt.up.hs.project.service.dto;
 
 import java.io.Serializable;
 import java.util.Objects;
+
 import io.github.jhipster.service.Criteria;
 import io.github.jhipster.service.filter.BooleanFilter;
 import io.github.jhipster.service.filter.DoubleFilter;
@@ -35,8 +36,6 @@ public class TaskCriteria implements Serializable, Criteria {
 
     private LocalDateFilter endDate;
 
-    private LongFilter projectId;
-
     private LongFilter labelsId;
 
     public TaskCriteria() {
@@ -48,7 +47,6 @@ public class TaskCriteria implements Serializable, Criteria {
         this.description = other.description == null ? null : other.description.copy();
         this.startDate = other.startDate == null ? null : other.startDate.copy();
         this.endDate = other.endDate == null ? null : other.endDate.copy();
-        this.projectId = other.projectId == null ? null : other.projectId.copy();
         this.labelsId = other.labelsId == null ? null : other.labelsId.copy();
     }
 
@@ -97,14 +95,6 @@ public class TaskCriteria implements Serializable, Criteria {
         this.endDate = endDate;
     }
 
-    public LongFilter getProjectId() {
-        return projectId;
-    }
-
-    public void setProjectId(LongFilter projectId) {
-        this.projectId = projectId;
-    }
-
     public LongFilter getLabelsId() {
         return labelsId;
     }
@@ -125,37 +115,34 @@ public class TaskCriteria implements Serializable, Criteria {
         final TaskCriteria that = (TaskCriteria) o;
         return
             Objects.equals(id, that.id) &&
-            Objects.equals(name, that.name) &&
-            Objects.equals(description, that.description) &&
-            Objects.equals(startDate, that.startDate) &&
-            Objects.equals(endDate, that.endDate) &&
-            Objects.equals(projectId, that.projectId) &&
-            Objects.equals(labelsId, that.labelsId);
+                Objects.equals(name, that.name) &&
+                Objects.equals(description, that.description) &&
+                Objects.equals(startDate, that.startDate) &&
+                Objects.equals(endDate, that.endDate) &&
+                Objects.equals(labelsId, that.labelsId);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(
-        id,
-        name,
-        description,
-        startDate,
-        endDate,
-        projectId,
-        labelsId
+            id,
+            name,
+            description,
+            startDate,
+            endDate,
+            labelsId
         );
     }
 
     @Override
     public String toString() {
         return "TaskCriteria{" +
-                (id != null ? "id=" + id + ", " : "") +
-                (name != null ? "name=" + name + ", " : "") +
-                (description != null ? "description=" + description + ", " : "") +
-                (startDate != null ? "startDate=" + startDate + ", " : "") +
-                (endDate != null ? "endDate=" + endDate + ", " : "") +
-                (projectId != null ? "projectId=" + projectId + ", " : "") +
-                (labelsId != null ? "labelsId=" + labelsId + ", " : "") +
+            (id != null ? "id=" + id + ", " : "") +
+            (name != null ? "name=" + name + ", " : "") +
+            (description != null ? "description=" + description + ", " : "") +
+            (startDate != null ? "startDate=" + startDate + ", " : "") +
+            (endDate != null ? "endDate=" + endDate + ", " : "") +
+            (labelsId != null ? "labelsId=" + labelsId + ", " : "") +
             "}";
     }
 

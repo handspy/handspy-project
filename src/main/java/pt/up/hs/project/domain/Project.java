@@ -7,7 +7,8 @@ import javax.persistence.*;
 import javax.validation.constraints.*;
 
 import java.io.Serializable;
-import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 import pt.up.hs.project.domain.enumeration.ProjectStatus;
 
@@ -17,7 +18,7 @@ import pt.up.hs.project.domain.enumeration.ProjectStatus;
 @Entity
 @Table(name = "project")
 @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
-public class Project implements Serializable {
+public class Project extends AbstractAuditingEntity {
 
     private static final long serialVersionUID = 1L;
 
@@ -41,28 +42,6 @@ public class Project implements Serializable {
     private String description;
 
     /**
-     * Image of the project for visual identification
-     */
-    @Lob
-    @Column(name = "image")
-    private byte[] image;
-
-    @Column(name = "image_content_type")
-    private String imageContentType;
-
-    /**
-     * Date in which the project starts
-     */
-    @Column(name = "start_date")
-    private LocalDate startDate;
-
-    /**
-     * Date in which the project ends
-     */
-    @Column(name = "end_date")
-    private LocalDate endDate;
-
-    /**
      * Status of the project
      */
     @NotNull
@@ -76,6 +55,21 @@ public class Project implements Serializable {
     @NotNull
     @Column(name = "owner", nullable = false)
     private Long owner;
+
+    /**
+     * Color of the project
+     */
+    @NotNull
+    @Column(name = "color", nullable = false)
+    private String color;
+
+    @OneToMany(mappedBy = "project")
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    private Set<Task> tasks = new HashSet<>();
+
+    @OneToMany(mappedBy = "project")
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    private Set<Participant> participants = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
     public Long getId() {
@@ -112,58 +106,6 @@ public class Project implements Serializable {
         this.description = description;
     }
 
-    public byte[] getImage() {
-        return image;
-    }
-
-    public Project image(byte[] image) {
-        this.image = image;
-        return this;
-    }
-
-    public void setImage(byte[] image) {
-        this.image = image;
-    }
-
-    public String getImageContentType() {
-        return imageContentType;
-    }
-
-    public Project imageContentType(String imageContentType) {
-        this.imageContentType = imageContentType;
-        return this;
-    }
-
-    public void setImageContentType(String imageContentType) {
-        this.imageContentType = imageContentType;
-    }
-
-    public LocalDate getStartDate() {
-        return startDate;
-    }
-
-    public Project startDate(LocalDate startDate) {
-        this.startDate = startDate;
-        return this;
-    }
-
-    public void setStartDate(LocalDate startDate) {
-        this.startDate = startDate;
-    }
-
-    public LocalDate getEndDate() {
-        return endDate;
-    }
-
-    public Project endDate(LocalDate endDate) {
-        this.endDate = endDate;
-        return this;
-    }
-
-    public void setEndDate(LocalDate endDate) {
-        this.endDate = endDate;
-    }
-
     public ProjectStatus getStatus() {
         return status;
     }
@@ -189,6 +131,69 @@ public class Project implements Serializable {
     public void setOwner(Long owner) {
         this.owner = owner;
     }
+
+    public String getColor() {
+        return color;
+    }
+
+    public Project color(String color) {
+        this.color = color;
+        return this;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public Set<Task> getTasks() {
+        return tasks;
+    }
+
+    public Project tasks(Set<Task> tasks) {
+        this.tasks = tasks;
+        return this;
+    }
+
+    public Project addTasks(Task task) {
+        this.tasks.add(task);
+        task.setProjectId(this.id);
+        return this;
+    }
+
+    public Project removeTasks(Task task) {
+        this.tasks.remove(task);
+        task.setProjectId(null);
+        return this;
+    }
+
+    public void setTasks(Set<Task> tasks) {
+        this.tasks = tasks;
+    }
+
+    public Set<Participant> getParticipants() {
+        return participants;
+    }
+
+    public Project participants(Set<Participant> participants) {
+        this.participants = participants;
+        return this;
+    }
+
+    public Project addParticipants(Participant participant) {
+        this.participants.add(participant);
+        participant.setProjectId(this.id);
+        return this;
+    }
+
+    public Project removeParticipants(Participant participant) {
+        this.participants.remove(participant);
+        participant.setProjectId(null);
+        return this;
+    }
+
+    public void setParticipants(Set<Participant> participants) {
+        this.participants = participants;
+    }
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here, do not remove
 
     @Override
@@ -213,12 +218,9 @@ public class Project implements Serializable {
             "id=" + getId() +
             ", name='" + getName() + "'" +
             ", description='" + getDescription() + "'" +
-            ", image='" + getImage() + "'" +
-            ", imageContentType='" + getImageContentType() + "'" +
-            ", startDate='" + getStartDate() + "'" +
-            ", endDate='" + getEndDate() + "'" +
             ", status='" + getStatus() + "'" +
             ", owner=" + getOwner() +
+            ", color='" + getColor() + "'" +
             "}";
     }
 }

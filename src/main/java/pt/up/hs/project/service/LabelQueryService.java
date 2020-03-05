@@ -44,39 +44,48 @@ public class LabelQueryService extends QueryService<Label> {
 
     /**
      * Return a {@link List} of {@link LabelDTO} which matches the criteria from the database.
+     *
+     * @param projectId ID of the container project.
      * @param criteria The object which holds all the filters, which the entities should match.
      * @return the matching entities.
      */
     @Transactional(readOnly = true)
-    public List<LabelDTO> findByCriteria(LabelCriteria criteria) {
-        log.debug("find by criteria : {}", criteria);
-        final Specification<Label> specification = createSpecification(criteria);
+    public List<LabelDTO> findByCriteria(Long projectId, LabelCriteria criteria) {
+        log.debug("find by criteria {} in project {}", criteria, projectId);
+        final Specification<Label> specification = createSpecification(criteria)
+            .and(equalsSpecification(root -> root.get("projectId"), projectId));
         return labelMapper.toDto(labelRepository.findAll(specification));
     }
 
     /**
      * Return a {@link Page} of {@link LabelDTO} which matches the criteria from the database.
+     *
+     * @param projectId ID of the container project.
      * @param criteria The object which holds all the filters, which the entities should match.
      * @param page The page, which should be returned.
      * @return the matching entities.
      */
     @Transactional(readOnly = true)
-    public Page<LabelDTO> findByCriteria(LabelCriteria criteria, Pageable page) {
-        log.debug("find by criteria : {}, page: {}", criteria, page);
-        final Specification<Label> specification = createSpecification(criteria);
+    public Page<LabelDTO> findByCriteria(Long projectId, LabelCriteria criteria, Pageable page) {
+        log.debug("find by criteria : {}, page: {} in project {}", criteria, page, projectId);
+        final Specification<Label> specification = createSpecification(criteria)
+            .and(equalsSpecification(root -> root.get("projectId"), projectId));
         return labelRepository.findAll(specification, page)
             .map(labelMapper::toDto);
     }
 
     /**
      * Return the number of matching entities in the database.
+     *
+     * @param projectId ID of the container project.
      * @param criteria The object which holds all the filters, which the entities should match.
      * @return the number of matching entities.
      */
     @Transactional(readOnly = true)
-    public long countByCriteria(LabelCriteria criteria) {
-        log.debug("count by criteria : {}", criteria);
-        final Specification<Label> specification = createSpecification(criteria);
+    public long countByCriteria(Long projectId, LabelCriteria criteria) {
+        log.debug("count by criteria {} in project {}", criteria, projectId);
+        final Specification<Label> specification = createSpecification(criteria)
+            .and(equalsSpecification(root -> root.get("projectId"), projectId));
         return labelRepository.count(specification);
     }
 
@@ -96,10 +105,6 @@ public class LabelQueryService extends QueryService<Label> {
             }
             if (criteria.getColor() != null) {
                 specification = specification.and(buildStringSpecification(criteria.getColor(), Label_.color));
-            }
-            if (criteria.getProjectId() != null) {
-                specification = specification.and(buildSpecification(criteria.getProjectId(),
-                    root -> root.join(Label_.project, JoinType.LEFT).get(Project_.id)));
             }
             if (criteria.getParticipantsId() != null) {
                 specification = specification.and(buildSpecification(criteria.getParticipantsId(),

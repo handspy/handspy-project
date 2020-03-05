@@ -44,44 +44,54 @@ public class TaskQueryService extends QueryService<Task> {
 
     /**
      * Return a {@link List} of {@link TaskDTO} which matches the criteria from the database.
-     * @param criteria The object which holds all the filters, which the entities should match.
+     *
+     * @param projectId ID of the container project.
+     * @param criteria  The object which holds all the filters, which the entities should match.
      * @return the matching entities.
      */
     @Transactional(readOnly = true)
-    public List<TaskDTO> findByCriteria(TaskCriteria criteria) {
-        log.debug("find by criteria : {}", criteria);
-        final Specification<Task> specification = createSpecification(criteria);
+    public List<TaskDTO> findByCriteria(Long projectId, TaskCriteria criteria) {
+        log.debug("find by criteria {} in project {}", criteria, projectId);
+        final Specification<Task> specification = createSpecification(criteria)
+            .and(equalsSpecification(root -> root.get("projectId"), projectId));
         return taskMapper.toDto(taskRepository.findAll(specification));
     }
 
     /**
      * Return a {@link Page} of {@link TaskDTO} which matches the criteria from the database.
-     * @param criteria The object which holds all the filters, which the entities should match.
-     * @param page The page, which should be returned.
+     *
+     * @param projectId ID of the container project.
+     * @param criteria  The object which holds all the filters, which the entities should match.
+     * @param page      The page, which should be returned.
      * @return the matching entities.
      */
     @Transactional(readOnly = true)
-    public Page<TaskDTO> findByCriteria(TaskCriteria criteria, Pageable page) {
-        log.debug("find by criteria : {}, page: {}", criteria, page);
-        final Specification<Task> specification = createSpecification(criteria);
+    public Page<TaskDTO> findByCriteria(Long projectId, TaskCriteria criteria, Pageable page) {
+        log.debug("find by criteria {}, page {} in project {}", criteria, page, projectId);
+        final Specification<Task> specification = createSpecification(criteria)
+            .and(equalsSpecification(root -> root.get("projectId"), projectId));
         return taskRepository.findAll(specification, page)
             .map(taskMapper::toDto);
     }
 
     /**
      * Return the number of matching entities in the database.
-     * @param criteria The object which holds all the filters, which the entities should match.
+     *
+     * @param projectId ID of the container project.
+     * @param criteria  The object which holds all the filters, which the entities should match.
      * @return the number of matching entities.
      */
     @Transactional(readOnly = true)
-    public long countByCriteria(TaskCriteria criteria) {
-        log.debug("count by criteria : {}", criteria);
-        final Specification<Task> specification = createSpecification(criteria);
+    public long countByCriteria(Long projectId, TaskCriteria criteria) {
+        log.debug("count by criteria {} in project {}", criteria, projectId);
+        final Specification<Task> specification = createSpecification(criteria)
+            .and(equalsSpecification(root -> root.get("projectId"), projectId));
         return taskRepository.count(specification);
     }
 
     /**
      * Function to convert {@link TaskCriteria} to a {@link Specification}
+     *
      * @param criteria The object which holds all the filters, which the entities should match.
      * @return the matching {@link Specification} of the entity.
      */
@@ -102,10 +112,6 @@ public class TaskQueryService extends QueryService<Task> {
             }
             if (criteria.getEndDate() != null) {
                 specification = specification.and(buildRangeSpecification(criteria.getEndDate(), Task_.endDate));
-            }
-            if (criteria.getProjectId() != null) {
-                specification = specification.and(buildSpecification(criteria.getProjectId(),
-                    root -> root.join(Task_.project, JoinType.LEFT).get(Project_.id)));
             }
             if (criteria.getLabelsId() != null) {
                 specification = specification.and(buildSpecification(criteria.getLabelsId(),

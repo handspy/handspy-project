@@ -1,11 +1,11 @@
-id;name;description;image;image_content_type;start_date;end_date;status;owner
-1;contextually-based Home Loan Account Books;Stand-alone;../fake-data/blob/hipster.png;image/png;2020-02-23;2020-02-23;CLOSED;24935
-2;Center;alarm Kansas utilize;../fake-data/blob/hipster.png;image/png;2020-02-23;2020-02-23;DISCARDED;39553
-3;system e-services Soft;Senior Junctions Assistant;../fake-data/blob/hipster.png;image/png;2020-02-23;2020-02-23;CLOSED;34608
-4;digital optical;Berkshire Alley revolutionary;../fake-data/blob/hipster.png;image/png;2020-02-23;2020-02-23;DRAFT;79445
-5;Beauty index Enhanced;Prairie;../fake-data/blob/hipster.png;image/png;2020-02-22;2020-02-23;CLOSED;50712
-6;Azerbaijanian Manat Cambridgeshire Soft;Oklahoma;../fake-data/blob/hipster.png;image/png;2020-02-23;2020-02-22;DRAFT;46216
-7;Specialist magenta Optional;firewall systemic technologies;../fake-data/blob/hipster.png;image/png;2020-02-22;2020-02-23;DRAFT;78387
-8;application;users;../fake-data/blob/hipster.png;image/png;2020-02-23;2020-02-23;DRAFT;75745
-9;mindshare actuating Unbranded Wooden Computer;invoice Buckinghamshire Mouse;../fake-data/blob/hipster.png;image/png;2020-02-22;2020-02-22;DRAFT;99644
-10;empowering synthesizing Small Rubber Soap;Zloty;../fake-data/blob/hipster.png;image/png;2020-02-23;2020-02-22;DISCARDED;64852
+id;name;description;status;owner;color
+1;contextually-based Home Loan Account Books;Stand-alone;CLOSED;24935;green
+2;Tasty Soft Tuna Kansas;Garden Checking Account;OPEN;32903;purple
+3;European Unit of Account 9(E.U.A.-9) Sleek redefine;Keyboard Pre-emptive Mountain;DISCARDED;67092;tan
+4;Alley revolutionary;robust solution;DRAFT;50284;ivory
+5;Enhanced turquoise;Brand neural;CLOSED;50712;magenta
+6;Sleek Frozen Keyboard open-source Oklahoma;multi-byte navigating;DRAFT;68935;black
+7;Assurance Faroe Islands;technologies International South Dakota;DRAFT;78387;purple
+8;Intelligent Cotton Cheese;indigo Concrete;CLOSED;19298;ivory
+9;mindshare actuating Unbranded Wooden Computer;invoice Buckinghamshire Mouse;DRAFT;99644;olive
+10;next-generation;Small Rubber Soap open architecture withdrawal;OPEN;52088;tan

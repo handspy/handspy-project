@@ -3,6 +3,8 @@ package pt.up.hs.project.web.rest;
 import pt.up.hs.project.ProjectApp;
 import pt.up.hs.project.config.SecurityBeanOverrideConfiguration;
 import pt.up.hs.project.domain.Project;
+import pt.up.hs.project.domain.Task;
+import pt.up.hs.project.domain.Participant;
 import pt.up.hs.project.repository.ProjectRepository;
 import pt.up.hs.project.service.ProjectService;
 import pt.up.hs.project.service.dto.ProjectDTO;
@@ -22,12 +24,10 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.Base64Utils;
 import org.springframework.validation.Validator;
 
 import javax.persistence.EntityManager;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.Instant;
 import java.util.List;
 
 import static pt.up.hs.project.web.rest.TestUtil.createFormattingConversionService;
@@ -49,25 +49,17 @@ public class ProjectResourceIT {
     private static final String DEFAULT_DESCRIPTION = "AAAAAAAAAA";
     private static final String UPDATED_DESCRIPTION = "BBBBBBBBBB";
 
-    private static final byte[] DEFAULT_IMAGE = TestUtil.createByteArray(1, "0");
-    private static final byte[] UPDATED_IMAGE = TestUtil.createByteArray(1, "1");
-    private static final String DEFAULT_IMAGE_CONTENT_TYPE = "image/jpg";
-    private static final String UPDATED_IMAGE_CONTENT_TYPE = "image/png";
-
-    private static final LocalDate DEFAULT_START_DATE = LocalDate.ofEpochDay(0L);
-    private static final LocalDate UPDATED_START_DATE = LocalDate.now(ZoneId.systemDefault());
-    private static final LocalDate SMALLER_START_DATE = LocalDate.ofEpochDay(-1L);
-
-    private static final LocalDate DEFAULT_END_DATE = LocalDate.ofEpochDay(0L);
-    private static final LocalDate UPDATED_END_DATE = LocalDate.now(ZoneId.systemDefault());
-    private static final LocalDate SMALLER_END_DATE = LocalDate.ofEpochDay(-1L);
-
     private static final ProjectStatus DEFAULT_STATUS = ProjectStatus.DRAFT;
     private static final ProjectStatus UPDATED_STATUS = ProjectStatus.OPEN;
 
     private static final Long DEFAULT_OWNER = 1L;
     private static final Long UPDATED_OWNER = 2L;
     private static final Long SMALLER_OWNER = 1L - 1L;
+
+    private static final String DEFAULT_COLOR = "AAAAAAAAAA";
+    private static final String UPDATED_COLOR = "BBBBBBBBBB";
+
+    private static final String DEFAULT_USERNAME = "system";
 
     @Autowired
     private ProjectRepository projectRepository;
@@ -80,6 +72,9 @@ public class ProjectResourceIT {
 
     @Autowired
     private ProjectQueryService projectQueryService;
+
+    @Autowired
+    private ParticipantResource participantResource;
 
     @Autowired
     private MappingJackson2HttpMessageConverter jacksonMessageConverter;
@@ -122,12 +117,9 @@ public class ProjectResourceIT {
         Project project = new Project()
             .name(DEFAULT_NAME)
             .description(DEFAULT_DESCRIPTION)
-            .image(DEFAULT_IMAGE)
-            .imageContentType(DEFAULT_IMAGE_CONTENT_TYPE)
-            .startDate(DEFAULT_START_DATE)
-            .endDate(DEFAULT_END_DATE)
             .status(DEFAULT_STATUS)
-            .owner(DEFAULT_OWNER);
+            .owner(DEFAULT_OWNER)
+            .color(DEFAULT_COLOR);
         return project;
     }
     /**
@@ -140,12 +132,9 @@ public class ProjectResourceIT {
         Project project = new Project()
             .name(UPDATED_NAME)
             .description(UPDATED_DESCRIPTION)
-            .image(UPDATED_IMAGE)
-            .imageContentType(UPDATED_IMAGE_CONTENT_TYPE)
-            .startDate(UPDATED_START_DATE)
-            .endDate(UPDATED_END_DATE)
             .status(UPDATED_STATUS)
-            .owner(UPDATED_OWNER);
+            .owner(UPDATED_OWNER)
+            .color(UPDATED_COLOR);
         return project;
     }
 
@@ -158,6 +147,9 @@ public class ProjectResourceIT {
     @Transactional
     public void createProject() throws Exception {
         int databaseSizeBeforeCreate = projectRepository.findAll().size();
+
+        // date before create
+        Instant beforeInstant = Instant.now();
 
         // Create the Project
         ProjectDTO projectDTO = projectMapper.toDto(project);
@@ -172,12 +164,11 @@ public class ProjectResourceIT {
         Project testProject = projectList.get(projectList.size() - 1);
         assertThat(testProject.getName()).isEqualTo(DEFAULT_NAME);
         assertThat(testProject.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
-        assertThat(testProject.getImage()).isEqualTo(DEFAULT_IMAGE);
-        assertThat(testProject.getImageContentType()).isEqualTo(DEFAULT_IMAGE_CONTENT_TYPE);
-        assertThat(testProject.getStartDate()).isEqualTo(DEFAULT_START_DATE);
-        assertThat(testProject.getEndDate()).isEqualTo(DEFAULT_END_DATE);
         assertThat(testProject.getStatus()).isEqualTo(DEFAULT_STATUS);
         assertThat(testProject.getOwner()).isEqualTo(DEFAULT_OWNER);
+        assertThat(testProject.getColor()).isEqualTo(DEFAULT_COLOR);
+        assertThat(testProject.getCreatedBy()).isEqualTo(DEFAULT_USERNAME);
+        assertThat(testProject.getCreatedDate()).isStrictlyBetween(beforeInstant, Instant.now());
     }
 
     @Test
@@ -260,6 +251,25 @@ public class ProjectResourceIT {
 
     @Test
     @Transactional
+    public void checkColorIsRequired() throws Exception {
+        int databaseSizeBeforeTest = projectRepository.findAll().size();
+        // set the field null
+        project.setColor(null);
+
+        // Create the Project, which fails.
+        ProjectDTO projectDTO = projectMapper.toDto(project);
+
+        restProjectMockMvc.perform(post("/api/projects")
+            .contentType(TestUtil.APPLICATION_JSON)
+            .content(TestUtil.convertObjectToJsonBytes(projectDTO)))
+            .andExpect(status().isBadRequest());
+
+        List<Project> projectList = projectRepository.findAll();
+        assertThat(projectList).hasSize(databaseSizeBeforeTest);
+    }
+
+    @Test
+    @Transactional
     public void getAllProjects() throws Exception {
         // Initialize the database
         projectRepository.saveAndFlush(project);
@@ -271,14 +281,13 @@ public class ProjectResourceIT {
             .andExpect(jsonPath("$.[*].id").value(hasItem(project.getId().intValue())))
             .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
             .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION)))
-            .andExpect(jsonPath("$.[*].imageContentType").value(hasItem(DEFAULT_IMAGE_CONTENT_TYPE)))
-            .andExpect(jsonPath("$.[*].image").value(hasItem(Base64Utils.encodeToString(DEFAULT_IMAGE))))
-            .andExpect(jsonPath("$.[*].startDate").value(hasItem(DEFAULT_START_DATE.toString())))
-            .andExpect(jsonPath("$.[*].endDate").value(hasItem(DEFAULT_END_DATE.toString())))
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())))
-            .andExpect(jsonPath("$.[*].owner").value(hasItem(DEFAULT_OWNER.intValue())));
+            .andExpect(jsonPath("$.[*].owner").value(hasItem(DEFAULT_OWNER.intValue())))
+            .andExpect(jsonPath("$.[*].color").value(hasItem(DEFAULT_COLOR)))
+            .andExpect(jsonPath("$.[*].createdBy").value(hasItem(DEFAULT_USERNAME)))
+            .andExpect(jsonPath("$.[*].createdDate").exists());
     }
-    
+
     @Test
     @Transactional
     public void getProject() throws Exception {
@@ -292,12 +301,11 @@ public class ProjectResourceIT {
             .andExpect(jsonPath("$.id").value(project.getId().intValue()))
             .andExpect(jsonPath("$.name").value(DEFAULT_NAME))
             .andExpect(jsonPath("$.description").value(DEFAULT_DESCRIPTION))
-            .andExpect(jsonPath("$.imageContentType").value(DEFAULT_IMAGE_CONTENT_TYPE))
-            .andExpect(jsonPath("$.image").value(Base64Utils.encodeToString(DEFAULT_IMAGE)))
-            .andExpect(jsonPath("$.startDate").value(DEFAULT_START_DATE.toString()))
-            .andExpect(jsonPath("$.endDate").value(DEFAULT_END_DATE.toString()))
             .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()))
-            .andExpect(jsonPath("$.owner").value(DEFAULT_OWNER.intValue()));
+            .andExpect(jsonPath("$.owner").value(DEFAULT_OWNER.intValue()))
+            .andExpect(jsonPath("$.color").value(DEFAULT_COLOR))
+            .andExpect(jsonPath("$.createdBy").value(DEFAULT_USERNAME))
+            .andExpect(jsonPath("$.createdDate").exists());
     }
 
 
@@ -478,216 +486,6 @@ public class ProjectResourceIT {
 
     @Test
     @Transactional
-    public void getAllProjectsByStartDateIsEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where startDate equals to DEFAULT_START_DATE
-        defaultProjectShouldBeFound("startDate.equals=" + DEFAULT_START_DATE);
-
-        // Get all the projectList where startDate equals to UPDATED_START_DATE
-        defaultProjectShouldNotBeFound("startDate.equals=" + UPDATED_START_DATE);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByStartDateIsNotEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where startDate not equals to DEFAULT_START_DATE
-        defaultProjectShouldNotBeFound("startDate.notEquals=" + DEFAULT_START_DATE);
-
-        // Get all the projectList where startDate not equals to UPDATED_START_DATE
-        defaultProjectShouldBeFound("startDate.notEquals=" + UPDATED_START_DATE);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByStartDateIsInShouldWork() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where startDate in DEFAULT_START_DATE or UPDATED_START_DATE
-        defaultProjectShouldBeFound("startDate.in=" + DEFAULT_START_DATE + "," + UPDATED_START_DATE);
-
-        // Get all the projectList where startDate equals to UPDATED_START_DATE
-        defaultProjectShouldNotBeFound("startDate.in=" + UPDATED_START_DATE);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByStartDateIsNullOrNotNull() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where startDate is not null
-        defaultProjectShouldBeFound("startDate.specified=true");
-
-        // Get all the projectList where startDate is null
-        defaultProjectShouldNotBeFound("startDate.specified=false");
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByStartDateIsGreaterThanOrEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where startDate is greater than or equal to DEFAULT_START_DATE
-        defaultProjectShouldBeFound("startDate.greaterThanOrEqual=" + DEFAULT_START_DATE);
-
-        // Get all the projectList where startDate is greater than or equal to UPDATED_START_DATE
-        defaultProjectShouldNotBeFound("startDate.greaterThanOrEqual=" + UPDATED_START_DATE);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByStartDateIsLessThanOrEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where startDate is less than or equal to DEFAULT_START_DATE
-        defaultProjectShouldBeFound("startDate.lessThanOrEqual=" + DEFAULT_START_DATE);
-
-        // Get all the projectList where startDate is less than or equal to SMALLER_START_DATE
-        defaultProjectShouldNotBeFound("startDate.lessThanOrEqual=" + SMALLER_START_DATE);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByStartDateIsLessThanSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where startDate is less than DEFAULT_START_DATE
-        defaultProjectShouldNotBeFound("startDate.lessThan=" + DEFAULT_START_DATE);
-
-        // Get all the projectList where startDate is less than UPDATED_START_DATE
-        defaultProjectShouldBeFound("startDate.lessThan=" + UPDATED_START_DATE);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByStartDateIsGreaterThanSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where startDate is greater than DEFAULT_START_DATE
-        defaultProjectShouldNotBeFound("startDate.greaterThan=" + DEFAULT_START_DATE);
-
-        // Get all the projectList where startDate is greater than SMALLER_START_DATE
-        defaultProjectShouldBeFound("startDate.greaterThan=" + SMALLER_START_DATE);
-    }
-
-
-    @Test
-    @Transactional
-    public void getAllProjectsByEndDateIsEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where endDate equals to DEFAULT_END_DATE
-        defaultProjectShouldBeFound("endDate.equals=" + DEFAULT_END_DATE);
-
-        // Get all the projectList where endDate equals to UPDATED_END_DATE
-        defaultProjectShouldNotBeFound("endDate.equals=" + UPDATED_END_DATE);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByEndDateIsNotEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where endDate not equals to DEFAULT_END_DATE
-        defaultProjectShouldNotBeFound("endDate.notEquals=" + DEFAULT_END_DATE);
-
-        // Get all the projectList where endDate not equals to UPDATED_END_DATE
-        defaultProjectShouldBeFound("endDate.notEquals=" + UPDATED_END_DATE);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByEndDateIsInShouldWork() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where endDate in DEFAULT_END_DATE or UPDATED_END_DATE
-        defaultProjectShouldBeFound("endDate.in=" + DEFAULT_END_DATE + "," + UPDATED_END_DATE);
-
-        // Get all the projectList where endDate equals to UPDATED_END_DATE
-        defaultProjectShouldNotBeFound("endDate.in=" + UPDATED_END_DATE);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByEndDateIsNullOrNotNull() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where endDate is not null
-        defaultProjectShouldBeFound("endDate.specified=true");
-
-        // Get all the projectList where endDate is null
-        defaultProjectShouldNotBeFound("endDate.specified=false");
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByEndDateIsGreaterThanOrEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where endDate is greater than or equal to DEFAULT_END_DATE
-        defaultProjectShouldBeFound("endDate.greaterThanOrEqual=" + DEFAULT_END_DATE);
-
-        // Get all the projectList where endDate is greater than or equal to UPDATED_END_DATE
-        defaultProjectShouldNotBeFound("endDate.greaterThanOrEqual=" + UPDATED_END_DATE);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByEndDateIsLessThanOrEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where endDate is less than or equal to DEFAULT_END_DATE
-        defaultProjectShouldBeFound("endDate.lessThanOrEqual=" + DEFAULT_END_DATE);
-
-        // Get all the projectList where endDate is less than or equal to SMALLER_END_DATE
-        defaultProjectShouldNotBeFound("endDate.lessThanOrEqual=" + SMALLER_END_DATE);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByEndDateIsLessThanSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where endDate is less than DEFAULT_END_DATE
-        defaultProjectShouldNotBeFound("endDate.lessThan=" + DEFAULT_END_DATE);
-
-        // Get all the projectList where endDate is less than UPDATED_END_DATE
-        defaultProjectShouldBeFound("endDate.lessThan=" + UPDATED_END_DATE);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByEndDateIsGreaterThanSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where endDate is greater than DEFAULT_END_DATE
-        defaultProjectShouldNotBeFound("endDate.greaterThan=" + DEFAULT_END_DATE);
-
-        // Get all the projectList where endDate is greater than SMALLER_END_DATE
-        defaultProjectShouldBeFound("endDate.greaterThan=" + SMALLER_END_DATE);
-    }
-
-
-    @Test
-    @Transactional
     public void getAllProjectsByStatusIsEqualToSomething() throws Exception {
         // Initialize the database
         projectRepository.saveAndFlush(project);
@@ -842,6 +640,124 @@ public class ProjectResourceIT {
         defaultProjectShouldBeFound("owner.greaterThan=" + SMALLER_OWNER);
     }
 
+
+    @Test
+    @Transactional
+    public void getAllProjectsByColorIsEqualToSomething() throws Exception {
+        // Initialize the database
+        projectRepository.saveAndFlush(project);
+
+        // Get all the projectList where color equals to DEFAULT_COLOR
+        defaultProjectShouldBeFound("color.equals=" + DEFAULT_COLOR);
+
+        // Get all the projectList where color equals to UPDATED_COLOR
+        defaultProjectShouldNotBeFound("color.equals=" + UPDATED_COLOR);
+    }
+
+    @Test
+    @Transactional
+    public void getAllProjectsByColorIsNotEqualToSomething() throws Exception {
+        // Initialize the database
+        projectRepository.saveAndFlush(project);
+
+        // Get all the projectList where color not equals to DEFAULT_COLOR
+        defaultProjectShouldNotBeFound("color.notEquals=" + DEFAULT_COLOR);
+
+        // Get all the projectList where color not equals to UPDATED_COLOR
+        defaultProjectShouldBeFound("color.notEquals=" + UPDATED_COLOR);
+    }
+
+    @Test
+    @Transactional
+    public void getAllProjectsByColorIsInShouldWork() throws Exception {
+        // Initialize the database
+        projectRepository.saveAndFlush(project);
+
+        // Get all the projectList where color in DEFAULT_COLOR or UPDATED_COLOR
+        defaultProjectShouldBeFound("color.in=" + DEFAULT_COLOR + "," + UPDATED_COLOR);
+
+        // Get all the projectList where color equals to UPDATED_COLOR
+        defaultProjectShouldNotBeFound("color.in=" + UPDATED_COLOR);
+    }
+
+    @Test
+    @Transactional
+    public void getAllProjectsByColorIsNullOrNotNull() throws Exception {
+        // Initialize the database
+        projectRepository.saveAndFlush(project);
+
+        // Get all the projectList where color is not null
+        defaultProjectShouldBeFound("color.specified=true");
+
+        // Get all the projectList where color is null
+        defaultProjectShouldNotBeFound("color.specified=false");
+    }
+                @Test
+    @Transactional
+    public void getAllProjectsByColorContainsSomething() throws Exception {
+        // Initialize the database
+        projectRepository.saveAndFlush(project);
+
+        // Get all the projectList where color contains DEFAULT_COLOR
+        defaultProjectShouldBeFound("color.contains=" + DEFAULT_COLOR);
+
+        // Get all the projectList where color contains UPDATED_COLOR
+        defaultProjectShouldNotBeFound("color.contains=" + UPDATED_COLOR);
+    }
+
+    @Test
+    @Transactional
+    public void getAllProjectsByColorNotContainsSomething() throws Exception {
+        // Initialize the database
+        projectRepository.saveAndFlush(project);
+
+        // Get all the projectList where color does not contain DEFAULT_COLOR
+        defaultProjectShouldNotBeFound("color.doesNotContain=" + DEFAULT_COLOR);
+
+        // Get all the projectList where color does not contain UPDATED_COLOR
+        defaultProjectShouldBeFound("color.doesNotContain=" + UPDATED_COLOR);
+    }
+
+
+    @Test
+    @Transactional
+    public void getAllProjectsByTasksIsEqualToSomething() throws Exception {
+        // Initialize the database
+        projectRepository.saveAndFlush(project);
+        Task tasks = TaskResourceIT.createEntity(project.getId());
+        em.persist(tasks);
+        em.flush();
+        project.addTasks(tasks);
+        projectRepository.saveAndFlush(project);
+        Long tasksId = tasks.getId();
+
+        // Get all the projectList where tasks equals to tasksId
+        defaultProjectShouldBeFound("tasksId.equals=" + tasksId);
+
+        // Get all the projectList where tasks equals to tasksId + 1
+        defaultProjectShouldNotBeFound("tasksId.equals=" + (tasksId + 1));
+    }
+
+
+    @Test
+    @Transactional
+    public void getAllProjectsByParticipantsIsEqualToSomething() throws Exception {
+        // Initialize the database
+        projectRepository.saveAndFlush(project);
+        Participant participants = ParticipantResourceIT.createEntity(project.getId());
+        em.persist(participants);
+        em.flush();
+        project.addParticipants(participants);
+        projectRepository.saveAndFlush(project);
+        Long participantsId = participants.getId();
+
+        // Get all the projectList where participants equals to participantsId
+        defaultProjectShouldBeFound("participantsId.equals=" + participantsId);
+
+        // Get all the projectList where participants equals to participantsId + 1
+        defaultProjectShouldNotBeFound("participantsId.equals=" + (participantsId + 1));
+    }
+
     /**
      * Executes the search, and checks that the default entity is returned.
      */
@@ -852,12 +768,11 @@ public class ProjectResourceIT {
             .andExpect(jsonPath("$.[*].id").value(hasItem(project.getId().intValue())))
             .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
             .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION)))
-            .andExpect(jsonPath("$.[*].imageContentType").value(hasItem(DEFAULT_IMAGE_CONTENT_TYPE)))
-            .andExpect(jsonPath("$.[*].image").value(hasItem(Base64Utils.encodeToString(DEFAULT_IMAGE))))
-            .andExpect(jsonPath("$.[*].startDate").value(hasItem(DEFAULT_START_DATE.toString())))
-            .andExpect(jsonPath("$.[*].endDate").value(hasItem(DEFAULT_END_DATE.toString())))
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())))
-            .andExpect(jsonPath("$.[*].owner").value(hasItem(DEFAULT_OWNER.intValue())));
+            .andExpect(jsonPath("$.[*].owner").value(hasItem(DEFAULT_OWNER.intValue())))
+            .andExpect(jsonPath("$.[*].color").value(hasItem(DEFAULT_COLOR)))
+            .andExpect(jsonPath("$.[*].createdBy").value(hasItem(DEFAULT_USERNAME)))
+            .andExpect(jsonPath("$.[*].createdDate").exists());
 
         // Check, that the count call also returns 1
         restProjectMockMvc.perform(get("/api/projects/count?sort=id,desc&" + filter))
@@ -895,25 +810,31 @@ public class ProjectResourceIT {
     @Test
     @Transactional
     public void updateProject() throws Exception {
+
+        Instant beforeCreateInstant = Instant.now();
+
         // Initialize the database
         projectRepository.saveAndFlush(project);
+
+        Instant afterCreateInstant = Instant.now();
 
         int databaseSizeBeforeUpdate = projectRepository.findAll().size();
 
         // Update the project
         Project updatedProject = projectRepository.findById(project.getId()).get();
+
         // Disconnect from session so that the updates on updatedProject are not directly saved in db
         em.detach(updatedProject);
         updatedProject
             .name(UPDATED_NAME)
             .description(UPDATED_DESCRIPTION)
-            .image(UPDATED_IMAGE)
-            .imageContentType(UPDATED_IMAGE_CONTENT_TYPE)
-            .startDate(UPDATED_START_DATE)
-            .endDate(UPDATED_END_DATE)
             .status(UPDATED_STATUS)
-            .owner(UPDATED_OWNER);
+            .owner(UPDATED_OWNER)
+            .color(UPDATED_COLOR);
+
         ProjectDTO projectDTO = projectMapper.toDto(updatedProject);
+
+        Instant beforeUpdateInstant = Instant.now();
 
         restProjectMockMvc.perform(put("/api/projects")
             .contentType(TestUtil.APPLICATION_JSON)
@@ -926,12 +847,13 @@ public class ProjectResourceIT {
         Project testProject = projectList.get(projectList.size() - 1);
         assertThat(testProject.getName()).isEqualTo(UPDATED_NAME);
         assertThat(testProject.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
-        assertThat(testProject.getImage()).isEqualTo(UPDATED_IMAGE);
-        assertThat(testProject.getImageContentType()).isEqualTo(UPDATED_IMAGE_CONTENT_TYPE);
-        assertThat(testProject.getStartDate()).isEqualTo(UPDATED_START_DATE);
-        assertThat(testProject.getEndDate()).isEqualTo(UPDATED_END_DATE);
         assertThat(testProject.getStatus()).isEqualTo(UPDATED_STATUS);
         assertThat(testProject.getOwner()).isEqualTo(UPDATED_OWNER);
+        assertThat(testProject.getColor()).isEqualTo(UPDATED_COLOR);
+        assertThat(testProject.getCreatedBy()).isEqualTo(DEFAULT_USERNAME);
+        assertThat(testProject.getLastModifiedBy()).isEqualTo(DEFAULT_USERNAME);
+        assertThat(testProject.getCreatedDate()).isStrictlyBetween(beforeCreateInstant, afterCreateInstant);
+        assertThat(testProject.getLastModifiedDate()).isStrictlyBetween(beforeUpdateInstant, Instant.now());
     }
 
     @Test

@@ -2,14 +2,11 @@ package pt.up.hs.project.service.dto;
 
 import java.io.Serializable;
 import java.util.Objects;
+
 import io.github.jhipster.service.Criteria;
 import pt.up.hs.project.domain.enumeration.Gender;
-import pt.up.hs.project.domain.enumeration.HandwritingMeans;
-import io.github.jhipster.service.filter.BooleanFilter;
-import io.github.jhipster.service.filter.DoubleFilter;
+import pt.up.hs.project.domain.enumeration.HandwritingMean;
 import io.github.jhipster.service.filter.Filter;
-import io.github.jhipster.service.filter.FloatFilter;
-import io.github.jhipster.service.filter.IntegerFilter;
 import io.github.jhipster.service.filter.LongFilter;
 import io.github.jhipster.service.filter.StringFilter;
 import io.github.jhipster.service.filter.LocalDateFilter;
@@ -42,10 +39,11 @@ public class ParticipantCriteria implements Serializable, Criteria {
         }
 
     }
+
     /**
      * Class for filtering HandwritingMeans
      */
-    public static class HandwritingMeansFilter extends Filter<HandwritingMeans> {
+    public static class HandwritingMeansFilter extends Filter<HandwritingMean> {
 
         public HandwritingMeansFilter() {
         }
@@ -75,8 +73,6 @@ public class ParticipantCriteria implements Serializable, Criteria {
 
     private StringFilter additionalInfo;
 
-    private LongFilter projectId;
-
     private LongFilter labelsId;
 
     public ParticipantCriteria() {
@@ -89,7 +85,6 @@ public class ParticipantCriteria implements Serializable, Criteria {
         this.birthdate = other.birthdate == null ? null : other.birthdate.copy();
         this.handedness = other.handedness == null ? null : other.handedness.copy();
         this.additionalInfo = other.additionalInfo == null ? null : other.additionalInfo.copy();
-        this.projectId = other.projectId == null ? null : other.projectId.copy();
         this.labelsId = other.labelsId == null ? null : other.labelsId.copy();
     }
 
@@ -146,14 +141,6 @@ public class ParticipantCriteria implements Serializable, Criteria {
         this.additionalInfo = additionalInfo;
     }
 
-    public LongFilter getProjectId() {
-        return projectId;
-    }
-
-    public void setProjectId(LongFilter projectId) {
-        this.projectId = projectId;
-    }
-
     public LongFilter getLabelsId() {
         return labelsId;
     }
@@ -174,40 +161,37 @@ public class ParticipantCriteria implements Serializable, Criteria {
         final ParticipantCriteria that = (ParticipantCriteria) o;
         return
             Objects.equals(id, that.id) &&
-            Objects.equals(name, that.name) &&
-            Objects.equals(gender, that.gender) &&
-            Objects.equals(birthdate, that.birthdate) &&
-            Objects.equals(handedness, that.handedness) &&
-            Objects.equals(additionalInfo, that.additionalInfo) &&
-            Objects.equals(projectId, that.projectId) &&
-            Objects.equals(labelsId, that.labelsId);
+                Objects.equals(name, that.name) &&
+                Objects.equals(gender, that.gender) &&
+                Objects.equals(birthdate, that.birthdate) &&
+                Objects.equals(handedness, that.handedness) &&
+                Objects.equals(additionalInfo, that.additionalInfo) &&
+                Objects.equals(labelsId, that.labelsId);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(
-        id,
-        name,
-        gender,
-        birthdate,
-        handedness,
-        additionalInfo,
-        projectId,
-        labelsId
+            id,
+            name,
+            gender,
+            birthdate,
+            handedness,
+            additionalInfo,
+            labelsId
         );
     }
 
     @Override
     public String toString() {
         return "ParticipantCriteria{" +
-                (id != null ? "id=" + id + ", " : "") +
-                (name != null ? "name=" + name + ", " : "") +
-                (gender != null ? "gender=" + gender + ", " : "") +
-                (birthdate != null ? "birthdate=" + birthdate + ", " : "") +
-                (handedness != null ? "handedness=" + handedness + ", " : "") +
-                (additionalInfo != null ? "additionalInfo=" + additionalInfo + ", " : "") +
-                (projectId != null ? "projectId=" + projectId + ", " : "") +
-                (labelsId != null ? "labelsId=" + labelsId + ", " : "") +
+            (id != null ? "id=" + id + ", " : "") +
+            (name != null ? "name=" + name + ", " : "") +
+            (gender != null ? "gender=" + gender + ", " : "") +
+            (birthdate != null ? "birthdate=" + birthdate + ", " : "") +
+            (handedness != null ? "handedness=" + handedness + ", " : "") +
+            (additionalInfo != null ? "additionalInfo=" + additionalInfo + ", " : "") +
+            (labelsId != null ? "labelsId=" + labelsId + ", " : "") +
             "}";
     }
 

@@ -15,31 +15,53 @@ public interface LabelService {
     /**
      * Save a label.
      *
+     * @param projectId ID of the project containing the label.
      * @param labelDTO the entity to save.
      * @return the persisted entity.
      */
-    LabelDTO save(LabelDTO labelDTO);
+    LabelDTO save(Long projectId, LabelDTO labelDTO);
+
+    /**
+     * Create a label with name "name" if one does not exist yet.
+     *
+     * @param projectId ID of the project containing the label.
+     * @param name the name of the label.
+     * @return the entity with name "name".
+     */
+    LabelDTO createIfNameNotExists(Long projectId, String name);
 
     /**
      * Get all the labels.
      *
+     * @param projectId ID of the project containing the labels.
      * @param pageable the pagination information.
      * @return the list of entities.
      */
-    Page<LabelDTO> findAll(Pageable pageable);
+    Page<LabelDTO> findAll(Long projectId, Pageable pageable);
 
     /**
      * Get the "id" label.
      *
+     * @param projectId ID of the project containing the label.
      * @param id the id of the entity.
      * @return the entity.
      */
-    Optional<LabelDTO> findOne(Long id);
+    Optional<LabelDTO> findOne(Long projectId, Long id);
+
+    /**
+     * Get the label with "name".
+     *
+     * @param projectId ID of the project containing the label.
+     * @param name the name of the entity.
+     * @return the entity.
+     */
+    Optional<LabelDTO> findOneByName(Long projectId, String name);
 
     /**
      * Delete the "id" label.
      *
+     * @param projectId ID of the project containing the label.
      * @param id the id of the entity.
      */
-    void delete(Long id);
+    void delete(Long projectId, Long id);
 }

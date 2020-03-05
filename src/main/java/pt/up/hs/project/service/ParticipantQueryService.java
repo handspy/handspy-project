@@ -44,45 +44,55 @@ public class ParticipantQueryService extends QueryService<Participant> {
 
     /**
      * Return a {@link List} of {@link ParticipantDTO} which matches the criteria from the database.
-     * @param criteria The object which holds all the filters, which the entities should match.
+     *
+     * @param projectId ID of the container project.
+     * @param criteria  The object which holds all the filters, which the entities should match.
      * @return the matching entities.
      */
     @Transactional(readOnly = true)
-    public List<ParticipantDTO> findByCriteria(ParticipantCriteria criteria) {
-        log.debug("find by criteria : {}", criteria);
-        final Specification<Participant> specification = createSpecification(criteria);
+    public List<ParticipantDTO> findByCriteria(Long projectId, ParticipantCriteria criteria) {
+        log.debug("find by criteria {} in project {}", criteria, projectId);
+        final Specification<Participant> specification = createSpecification(criteria)
+            .and(equalsSpecification(root -> root.get("projectId"), projectId));
         return participantMapper.toDto(participantRepository.findAll(specification));
     }
 
     /**
      * Return a {@link Page} of {@link ParticipantDTO} which matches the criteria from the database.
-     * @param criteria The object which holds all the filters, which the entities should match.
-     * @param page The page, which should be returned.
+     *
+     * @param projectId ID of the container project.
+     * @param criteria  The object which holds all the filters, which the entities should match.
+     * @param page      The page, which should be returned.
      * @return the matching entities.
      */
     @Transactional(readOnly = true)
-    public Page<ParticipantDTO> findByCriteria(ParticipantCriteria criteria, Pageable page) {
-        log.debug("find by criteria : {}, page: {}", criteria, page);
-        final Specification<Participant> specification = createSpecification(criteria);
+    public Page<ParticipantDTO> findByCriteria(Long projectId, ParticipantCriteria criteria, Pageable page) {
+        log.debug("find by criteria {}, page {} in project {}", criteria, page, projectId);
+        final Specification<Participant> specification = createSpecification(criteria)
+            .and(equalsSpecification(root -> root.get("projectId"), projectId));
         return participantRepository.findAll(specification, page)
             .map(participantMapper::toDto);
     }
 
     /**
      * Return the number of matching entities in the database.
-     * @param criteria The object which holds all the filters, which the entities should match.
+     *
+     * @param projectId ID of the container project.
+     * @param criteria  The object which holds all the filters, which the entities should match.
      * @return the number of matching entities.
      */
     @Transactional(readOnly = true)
-    public long countByCriteria(ParticipantCriteria criteria) {
-        log.debug("count by criteria : {}", criteria);
-        final Specification<Participant> specification = createSpecification(criteria);
+    public long countByCriteria(Long projectId, ParticipantCriteria criteria) {
+        log.debug("count by criteria {} in project {}", criteria, projectId);
+        final Specification<Participant> specification = createSpecification(criteria)
+            .and(equalsSpecification(root -> root.get("projectId"), projectId));
         return participantRepository.count(specification);
     }
 
     /**
      * Function to convert {@link ParticipantCriteria} to a {@link Specification}
-     * @param criteria The object which holds all the filters, which the entities should match.
+     *
+     * @param criteria  The object which holds all the filters, which the entities should match.
      * @return the matching {@link Specification} of the entity.
      */
     protected Specification<Participant> createSpecification(ParticipantCriteria criteria) {
@@ -105,10 +115,6 @@ public class ParticipantQueryService extends QueryService<Participant> {
             }
             if (criteria.getAdditionalInfo() != null) {
                 specification = specification.and(buildStringSpecification(criteria.getAdditionalInfo(), Participant_.additionalInfo));
-            }
-            if (criteria.getProjectId() != null) {
-                specification = specification.and(buildSpecification(criteria.getProjectId(),
-                    root -> root.join(Participant_.project, JoinType.LEFT).get(Project_.id)));
             }
             if (criteria.getLabelsId() != null) {
                 specification = specification.and(buildSpecification(criteria.getLabelsId(),

@@ -1,13 +1,13 @@
 package pt.up.hs.project.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import javax.persistence.*;
-import javax.validation.constraints.*;
-
-import java.io.Serializable;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
@@ -18,7 +18,7 @@ import java.util.Set;
 @Entity
 @Table(name = "task")
 @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
-public class Task implements Serializable {
+public class Task extends AbstractAuditingEntity {
 
     private static final long serialVersionUID = 1L;
 
@@ -56,12 +56,19 @@ public class Task implements Serializable {
     /**
      * A task belongs to a project.
      */
-    @ManyToOne(optional = false)
-    @NotNull
-    @JsonIgnoreProperties("tasks")
+    @JoinColumn(name = "project_id", insertable = false, updatable = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JsonIgnore
     private Project project;
 
-    @ManyToMany
+    @Column(name = "project_id")
+    @NotNull
+    private Long projectId;
+
+    @ManyToMany(
+        fetch = FetchType.LAZY,
+        cascade = { CascadeType.MERGE }
+    )
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     @JoinTable(name = "task_labels",
                joinColumns = @JoinColumn(name = "task_id", referencedColumnName = "id"),
@@ -133,13 +140,17 @@ public class Task implements Serializable {
         return project;
     }
 
-    public Task project(Project project) {
-        this.project = project;
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public Task projectId(Long projectId) {
+        this.projectId = projectId;
         return this;
     }
 
-    public void setProject(Project project) {
-        this.project = project;
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
     }
 
     public Set<Label> getLabels() {

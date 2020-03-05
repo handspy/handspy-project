@@ -6,7 +6,7 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd
                         http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
-    
+
     <!--
         Added the entity Project.
     -->
@@ -21,24 +21,21 @@
             <column name="description" type="varchar(500)" remarks="Details about the project">
                 <constraints nullable="true" />
             </column>
-            <column name="image" type="longblob" remarks="Image of the project for visual identification">
-                <constraints nullable="true" />
-            </column>
-            <column name="image_content_type" type="varchar(255)">
-                <constraints nullable="true" />
-            </column>
-            <column name="start_date" type="date" remarks="Date in which the project starts">
-                <constraints nullable="true" />
-            </column>
-            <column name="end_date" type="date" remarks="Date in which the project ends">
-                <constraints nullable="true" />
-            </column>
             <column name="status" type="varchar(255)" remarks="Status of the project">
                 <constraints nullable="false" />
             </column>
             <column name="owner" type="bigint" remarks="Owner of the project">
                 <constraints nullable="false" />
             </column>
+            <column name="color" type="varchar(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="created_by" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="timestamp"/>
+            <column name="last_modified_by" type="varchar(50)"/>
+            <column name="last_modified_date" type="timestamp"/>
             <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here, do not remove-->
         </createTable>
     </changeSet>
@@ -64,12 +61,9 @@
             <column name="id" type="numeric"/>
             <column name="name" type="string"/>
             <column name="description" type="string"/>
-            <column name="image" type="blob"/>
-            <column name="image_content_type" type="string"/>
-            <column name="start_date" type="date"/>
-            <column name="end_date" type="date"/>
             <column name="status" type="string"/>
             <column name="owner" type="numeric"/>
+            <column name="color" type="string"/>
             <!-- jhipster-needle-liquibase-add-loadcolumn - JHipster (and/or extensions) can add load columns here, do not remove-->
         </loadData>
     </changeSet>

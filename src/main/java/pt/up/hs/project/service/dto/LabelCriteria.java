@@ -2,6 +2,7 @@ package pt.up.hs.project.service.dto;
 
 import java.io.Serializable;
 import java.util.Objects;
+
 import io.github.jhipster.service.Criteria;
 import io.github.jhipster.service.filter.BooleanFilter;
 import io.github.jhipster.service.filter.DoubleFilter;
@@ -30,8 +31,6 @@ public class LabelCriteria implements Serializable, Criteria {
 
     private StringFilter color;
 
-    private LongFilter projectId;
-
     private LongFilter participantsId;
 
     private LongFilter tasksId;
@@ -43,7 +42,6 @@ public class LabelCriteria implements Serializable, Criteria {
         this.id = other.id == null ? null : other.id.copy();
         this.name = other.name == null ? null : other.name.copy();
         this.color = other.color == null ? null : other.color.copy();
-        this.projectId = other.projectId == null ? null : other.projectId.copy();
         this.participantsId = other.participantsId == null ? null : other.participantsId.copy();
         this.tasksId = other.tasksId == null ? null : other.tasksId.copy();
     }
@@ -77,14 +75,6 @@ public class LabelCriteria implements Serializable, Criteria {
         this.color = color;
     }
 
-    public LongFilter getProjectId() {
-        return projectId;
-    }
-
-    public void setProjectId(LongFilter projectId) {
-        this.projectId = projectId;
-    }
-
     public LongFilter getParticipantsId() {
         return participantsId;
     }
@@ -113,34 +103,31 @@ public class LabelCriteria implements Serializable, Criteria {
         final LabelCriteria that = (LabelCriteria) o;
         return
             Objects.equals(id, that.id) &&
-            Objects.equals(name, that.name) &&
-            Objects.equals(color, that.color) &&
-            Objects.equals(projectId, that.projectId) &&
-            Objects.equals(participantsId, that.participantsId) &&
-            Objects.equals(tasksId, that.tasksId);
+                Objects.equals(name, that.name) &&
+                Objects.equals(color, that.color) &&
+                Objects.equals(participantsId, that.participantsId) &&
+                Objects.equals(tasksId, that.tasksId);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(
-        id,
-        name,
-        color,
-        projectId,
-        participantsId,
-        tasksId
+            id,
+            name,
+            color,
+            participantsId,
+            tasksId
         );
     }
 
     @Override
     public String toString() {
         return "LabelCriteria{" +
-                (id != null ? "id=" + id + ", " : "") +
-                (name != null ? "name=" + name + ", " : "") +
-                (color != null ? "color=" + color + ", " : "") +
-                (projectId != null ? "projectId=" + projectId + ", " : "") +
-                (participantsId != null ? "participantsId=" + participantsId + ", " : "") +
-                (tasksId != null ? "tasksId=" + tasksId + ", " : "") +
+            (id != null ? "id=" + id + ", " : "") +
+            (name != null ? "name=" + name + ", " : "") +
+            (color != null ? "color=" + color + ", " : "") +
+            (participantsId != null ? "participantsId=" + participantsId + ", " : "") +
+            (tasksId != null ? "tasksId=" + tasksId + ", " : "") +
             "}";
     }
 

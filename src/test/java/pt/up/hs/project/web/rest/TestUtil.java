@@ -12,6 +12,10 @@ import org.springframework.format.support.FormattingConversionService;
 import org.springframework.http.MediaType;
 
 import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -53,6 +57,14 @@ public final class TestUtil {
      */
     public static byte[] convertObjectToJsonBytes(Object object) throws IOException {
         return mapper.writeValueAsBytes(object);
+    }
+
+    public static byte[] readFileFromResourcesFolder(String path) throws Exception {
+        URL url = Thread.currentThread().getContextClassLoader().getResource(path);
+        if (url == null) {
+            throw new Exception("File " + path + " does not exist.");
+        }
+        return Files.readAllBytes(Paths.get(url.toURI()));
     }
 
     /**

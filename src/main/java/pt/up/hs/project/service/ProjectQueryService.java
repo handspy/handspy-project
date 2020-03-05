@@ -97,17 +97,22 @@ public class ProjectQueryService extends QueryService<Project> {
             if (criteria.getDescription() != null) {
                 specification = specification.and(buildStringSpecification(criteria.getDescription(), Project_.description));
             }
-            if (criteria.getStartDate() != null) {
-                specification = specification.and(buildRangeSpecification(criteria.getStartDate(), Project_.startDate));
-            }
-            if (criteria.getEndDate() != null) {
-                specification = specification.and(buildRangeSpecification(criteria.getEndDate(), Project_.endDate));
-            }
             if (criteria.getStatus() != null) {
                 specification = specification.and(buildSpecification(criteria.getStatus(), Project_.status));
             }
             if (criteria.getOwner() != null) {
                 specification = specification.and(buildRangeSpecification(criteria.getOwner(), Project_.owner));
+            }
+            if (criteria.getColor() != null) {
+                specification = specification.and(buildStringSpecification(criteria.getColor(), Project_.color));
+            }
+            if (criteria.getTasksId() != null) {
+                specification = specification.and(buildSpecification(criteria.getTasksId(),
+                    root -> root.join(Project_.tasks, JoinType.LEFT).get(Task_.id)));
+            }
+            if (criteria.getParticipantsId() != null) {
+                specification = specification.and(buildSpecification(criteria.getParticipantsId(),
+                    root -> root.join(Project_.participants, JoinType.LEFT).get(Participant_.id)));
             }
         }
         return specification;

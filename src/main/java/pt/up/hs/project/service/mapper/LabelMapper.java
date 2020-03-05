@@ -12,10 +12,8 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring", uses = {ProjectMapper.class})
 public interface LabelMapper extends EntityMapper<LabelDTO, Label> {
 
-    @Mapping(source = "project.id", target = "projectId")
     LabelDTO toDto(Label label);
 
-    @Mapping(source = "projectId", target = "project")
     @Mapping(target = "participants", ignore = true)
     @Mapping(target = "removeParticipants", ignore = true)
     @Mapping(target = "tasks", ignore = true)

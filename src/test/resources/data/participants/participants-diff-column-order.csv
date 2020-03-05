@@ -1,0 +1,5 @@
+name,gender,handedness,additional info,birthdate,labels
+John Doe,MALE,LEft,multi-tasking,2020-02-23,test; nop
+Jane Doe,FEMALE,OTHER,"Run Avon, overriding",2020-02-23,test
+John,M,l,Buckinghamshire,2020-02-22,
+Jane,F,RIGHT HAND,Buckinghamshire,2020-02-23,nop

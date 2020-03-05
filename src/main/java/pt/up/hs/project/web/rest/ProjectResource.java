@@ -41,7 +41,6 @@ public class ProjectResource {
     private String applicationName;
 
     private final ProjectService projectService;
-
     private final ProjectQueryService projectQueryService;
 
     public ProjectResource(ProjectService projectService, ProjectQueryService projectQueryService) {

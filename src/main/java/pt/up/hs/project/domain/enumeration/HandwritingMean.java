@@ -1,8 +1,8 @@
 package pt.up.hs.project.domain.enumeration;
 
 /**
- * The HandwritingMeans enumeration.
+ * The Handedness enumeration.
  */
-public enum HandwritingMeans {
+public enum HandwritingMean {
     LEFT_HAND, RIGHT_HAND, OTHER
 }

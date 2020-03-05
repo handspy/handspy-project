@@ -19,22 +19,6 @@
             "fieldValidateRulesMaxlength": "500"
         },
         {
-            "fieldName": "image",
-            "javadoc": "Image of the project for visual identification",
-            "fieldType": "byte[]",
-            "fieldTypeBlobContent": "image"
-        },
-        {
-            "fieldName": "startDate",
-            "javadoc": "Date in which the project starts",
-            "fieldType": "LocalDate"
-        },
-        {
-            "fieldName": "endDate",
-            "javadoc": "Date in which the project ends",
-            "fieldType": "LocalDate"
-        },
-        {
             "fieldName": "status",
             "javadoc": "Status of the project",
             "fieldType": "ProjectStatus",
@@ -50,9 +34,29 @@
             "fieldValidateRules": [
                 "required"
             ]
+        },
+        {
+            "fieldName": "color",
+            "fieldType": "String",
+            "fieldValidateRules": [
+                "required"
+            ]
         }
     ],
-    "relationships": [],
+    "relationships": [
+        {
+            "relationshipName": "tasks",
+            "otherEntityName": "task",
+            "relationshipType": "one-to-many",
+            "otherEntityRelationshipName": "project"
+        },
+        {
+            "relationshipName": "participants",
+            "otherEntityName": "participant",
+            "relationshipType": "one-to-many",
+            "otherEntityRelationshipName": "project"
+        }
+    ],
     "changelogDate": "20200223175318",
     "javadoc": "The Project entity.\\n\\n@author José Carlos Paiva",
     "entityTableName": "project",
@@ -62,10 +66,12 @@
     "jpaMetamodelFiltering": true,
     "fluentMethods": true,
     "readOnly": false,
-    "clientRootFolder": "",
+    "clientRootFolder": "project",
     "applications": [
         "gateway",
         "project"
     ],
-    "microserviceName": "project"
+    "microserviceName": "project",
+    "searchEngine": false,
+    "databaseType": "sql"
 }

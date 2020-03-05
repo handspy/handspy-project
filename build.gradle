@@ -218,6 +218,7 @@ dependencies {
     implementation "com.hazelcast:hazelcast"
     implementation "com.hazelcast:hazelcast-hibernate53"
     implementation "com.hazelcast:hazelcast-spring"
+    implementation "com.opencsv:opencsv:${opencsv_version}"
     implementation "javax.cache:cache-api"
     implementation "org.hibernate:hibernate-core"
     implementation "com.zaxxer:HikariCP"
@@ -230,6 +231,7 @@ dependencies {
     liquibaseRuntime "org.liquibase:liquibase-core"
     liquibaseRuntime "org.liquibase.ext:liquibase-hibernate5:${liquibase_hibernate5_version}"
     liquibaseRuntime sourceSets.main.compileClasspath
+    implementation "org.springframework.batch:spring-batch-core"
     implementation "org.springframework.boot:spring-boot-loader-tools"
     implementation "org.springframework.boot:spring-boot-starter-mail"
     implementation "org.springframework.boot:spring-boot-starter-logging"

@@ -77,6 +77,7 @@ public class LabelResourceIT {
 
     private MockMvc restLabelMockMvc;
 
+    private Long projectId;
     private Label label;
 
     @BeforeEach
@@ -93,52 +94,47 @@ public class LabelResourceIT {
 
     /**
      * Create an entity for this test.
-     *
+     * <p>
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Label createEntity(EntityManager em) {
-        Label label = new Label()
+    public static Label createEntity(Long projectId) {
+        return new Label()
             .name(DEFAULT_NAME)
-            .color(DEFAULT_COLOR);
-        // Add required entity
-        Project project;
-        if (TestUtil.findAll(em, Project.class).isEmpty()) {
-            project = ProjectResourceIT.createEntity(em);
-            em.persist(project);
-            em.flush();
-        } else {
-            project = TestUtil.findAll(em, Project.class).get(0);
-        }
-        label.setProject(project);
-        return label;
+            .color(DEFAULT_COLOR)
+            .projectId(projectId);
     }
+
     /**
      * Create an updated entity for this test.
-     *
+     * <p>
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Label createUpdatedEntity(EntityManager em) {
-        Label label = new Label()
+    public static Label createUpdatedEntity(Long projectId) {
+        return new Label()
             .name(UPDATED_NAME)
-            .color(UPDATED_COLOR);
+            .color(UPDATED_COLOR)
+            .projectId(projectId);
+    }
+
+    private static Project getProject(EntityManager em, Project entity) {
         // Add required entity
         Project project;
         if (TestUtil.findAll(em, Project.class).isEmpty()) {
-            project = ProjectResourceIT.createUpdatedEntity(em);
+            project = entity;
             em.persist(project);
             em.flush();
         } else {
             project = TestUtil.findAll(em, Project.class).get(0);
         }
-        label.setProject(project);
-        return label;
+        return project;
     }
 
     @BeforeEach
     public void initTest() {
-        label = createEntity(em);
+        projectId = getProject(em, ProjectResourceIT.createEntity(em)).getId();
+        label = createEntity(projectId);
     }
 
     @Test
@@ -148,7 +144,7 @@ public class LabelResourceIT {
 
         // Create the Label
         LabelDTO labelDTO = labelMapper.toDto(label);
-        restLabelMockMvc.perform(post("/api/labels")
+        restLabelMockMvc.perform(post("/api/projects/{projectId}/labels", projectId)
             .contentType(TestUtil.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(labelDTO)))
             .andExpect(status().isCreated());
@@ -171,7 +167,7 @@ public class LabelResourceIT {
         LabelDTO labelDTO = labelMapper.toDto(label);
 
         // An entity with an existing ID cannot be created, so this API call must fail
-        restLabelMockMvc.perform(post("/api/labels")
+        restLabelMockMvc.perform(post("/api/projects/{projectId}/labels", projectId)
             .contentType(TestUtil.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(labelDTO)))
             .andExpect(status().isBadRequest());
@@ -192,7 +188,7 @@ public class LabelResourceIT {
         // Create the Label, which fails.
         LabelDTO labelDTO = labelMapper.toDto(label);
 
-        restLabelMockMvc.perform(post("/api/labels")
+        restLabelMockMvc.perform(post("/api/projects/{projectId}/labels", projectId)
             .contentType(TestUtil.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(labelDTO)))
             .andExpect(status().isBadRequest());
@@ -211,7 +207,7 @@ public class LabelResourceIT {
         // Create the Label, which fails.
         LabelDTO labelDTO = labelMapper.toDto(label);
 
-        restLabelMockMvc.perform(post("/api/labels")
+        restLabelMockMvc.perform(post("/api/projects/{projectId}/labels", projectId)
             .contentType(TestUtil.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(labelDTO)))
             .andExpect(status().isBadRequest());
@@ -227,14 +223,14 @@ public class LabelResourceIT {
         labelRepository.saveAndFlush(label);
 
         // Get all the labelList
-        restLabelMockMvc.perform(get("/api/labels?sort=id,desc"))
+        restLabelMockMvc.perform(get("/api/projects/{projectId}/labels?sort=id,desc", projectId))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(label.getId().intValue())))
             .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
             .andExpect(jsonPath("$.[*].color").value(hasItem(DEFAULT_COLOR)));
     }
-    
+
     @Test
     @Transactional
     public void getLabel() throws Exception {
@@ -242,7 +238,7 @@ public class LabelResourceIT {
         labelRepository.saveAndFlush(label);
 
         // Get the label
-        restLabelMockMvc.perform(get("/api/labels/{id}", label.getId()))
+        restLabelMockMvc.perform(get("/api/projects/{projectId}/labels/{id}", projectId, label.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.id").value(label.getId().intValue()))
@@ -321,7 +317,8 @@ public class LabelResourceIT {
         // Get all the labelList where name is null
         defaultLabelShouldNotBeFound("name.specified=false");
     }
-                @Test
+
+    @Test
     @Transactional
     public void getAllLabelsByNameContainsSomething() throws Exception {
         // Initialize the database
@@ -399,7 +396,8 @@ public class LabelResourceIT {
         // Get all the labelList where color is null
         defaultLabelShouldNotBeFound("color.specified=false");
     }
-                @Test
+
+    @Test
     @Transactional
     public void getAllLabelsByColorContainsSomething() throws Exception {
         // Initialize the database
@@ -428,26 +426,10 @@ public class LabelResourceIT {
 
     @Test
     @Transactional
-    public void getAllLabelsByProjectIsEqualToSomething() throws Exception {
-        // Get already existing entity
-        Project project = label.getProject();
-        labelRepository.saveAndFlush(label);
-        Long projectId = project.getId();
-
-        // Get all the labelList where project equals to projectId
-        defaultLabelShouldBeFound("projectId.equals=" + projectId);
-
-        // Get all the labelList where project equals to projectId + 1
-        defaultLabelShouldNotBeFound("projectId.equals=" + (projectId + 1));
-    }
-
-
-    @Test
-    @Transactional
     public void getAllLabelsByParticipantsIsEqualToSomething() throws Exception {
         // Initialize the database
         labelRepository.saveAndFlush(label);
-        Participant participants = ParticipantResourceIT.createEntity(em);
+        Participant participants = ParticipantResourceIT.createEntity(projectId);
         em.persist(participants);
         em.flush();
         label.addParticipants(participants);
@@ -467,7 +449,7 @@ public class LabelResourceIT {
     public void getAllLabelsByTasksIsEqualToSomething() throws Exception {
         // Initialize the database
         labelRepository.saveAndFlush(label);
-        Task tasks = TaskResourceIT.createEntity(em);
+        Task tasks = TaskResourceIT.createEntity(projectId);
         em.persist(tasks);
         em.flush();
         label.addTasks(tasks);
@@ -485,7 +467,7 @@ public class LabelResourceIT {
      * Executes the search, and checks that the default entity is returned.
      */
     private void defaultLabelShouldBeFound(String filter) throws Exception {
-        restLabelMockMvc.perform(get("/api/labels?sort=id,desc&" + filter))
+        restLabelMockMvc.perform(get("/api/projects/{projectId}/labels?sort=id,desc&" + filter, projectId))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(label.getId().intValue())))
@@ -493,7 +475,7 @@ public class LabelResourceIT {
             .andExpect(jsonPath("$.[*].color").value(hasItem(DEFAULT_COLOR)));
 
         // Check, that the count call also returns 1
-        restLabelMockMvc.perform(get("/api/labels/count?sort=id,desc&" + filter))
+        restLabelMockMvc.perform(get("/api/projects/{projectId}/labels/count?sort=id,desc&" + filter, projectId))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(content().string("1"));
@@ -503,14 +485,14 @@ public class LabelResourceIT {
      * Executes the search, and checks that the default entity is not returned.
      */
     private void defaultLabelShouldNotBeFound(String filter) throws Exception {
-        restLabelMockMvc.perform(get("/api/labels?sort=id,desc&" + filter))
+        restLabelMockMvc.perform(get("/api/projects/{projectId}/labels?sort=id,desc&" + filter, projectId))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$").isArray())
             .andExpect(jsonPath("$").isEmpty());
 
         // Check, that the count call also returns 0
-        restLabelMockMvc.perform(get("/api/labels/count?sort=id,desc&" + filter))
+        restLabelMockMvc.perform(get("/api/projects/{projectId}/labels/count?sort=id,desc&" + filter, projectId))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(content().string("0"));
@@ -521,7 +503,7 @@ public class LabelResourceIT {
     @Transactional
     public void getNonExistingLabel() throws Exception {
         // Get the label
-        restLabelMockMvc.perform(get("/api/labels/{id}", Long.MAX_VALUE))
+        restLabelMockMvc.perform(get("/api/projects/{projectId}/labels/{id}", projectId, Long.MAX_VALUE))
             .andExpect(status().isNotFound());
     }
 
@@ -542,7 +524,7 @@ public class LabelResourceIT {
             .color(UPDATED_COLOR);
         LabelDTO labelDTO = labelMapper.toDto(updatedLabel);
 
-        restLabelMockMvc.perform(put("/api/labels")
+        restLabelMockMvc.perform(put("/api/projects/{projectId}/labels", projectId)
             .contentType(TestUtil.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(labelDTO)))
             .andExpect(status().isOk());
@@ -564,7 +546,7 @@ public class LabelResourceIT {
         LabelDTO labelDTO = labelMapper.toDto(label);
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
-        restLabelMockMvc.perform(put("/api/labels")
+        restLabelMockMvc.perform(put("/api/projects/{projectId}/labels", projectId)
             .contentType(TestUtil.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(labelDTO)))
             .andExpect(status().isBadRequest());
@@ -583,7 +565,7 @@ public class LabelResourceIT {
         int databaseSizeBeforeDelete = labelRepository.findAll().size();
 
         // Delete the label
-        restLabelMockMvc.perform(delete("/api/labels/{id}", label.getId())
+        restLabelMockMvc.perform(delete("/api/projects/{projectId}/labels/{id}", projectId, label.getId())
             .accept(TestUtil.APPLICATION_JSON))
             .andExpect(status().isNoContent());
 

@@ -1,28 +1,29 @@
 package pt.up.hs.project.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import javax.persistence.*;
 import javax.validation.constraints.*;
-
-import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
 import pt.up.hs.project.domain.enumeration.Gender;
 
-import pt.up.hs.project.domain.enumeration.HandwritingMeans;
+import pt.up.hs.project.domain.enumeration.HandwritingMean;
 
 /**
- * Information about a participant involved in the experiment. Participants are\norganized in groups, and part of a project.\n\n@author José Carlos Paiva
+ * Information about a participant involved in the experiment. Participants are
+ * organized in groups, and part of a project.
+ *
+ * @author José Carlos Paiva
  */
 @Entity
 @Table(name = "participant")
 @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
-public class Participant implements Serializable {
+public class Participant extends AbstractAuditingEntity {
 
     private static final long serialVersionUID = 1L;
 
@@ -56,7 +57,7 @@ public class Participant implements Serializable {
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "handedness")
-    private HandwritingMeans handedness;
+    private HandwritingMean handedness;
 
     /**
      * Additional information about the participant
@@ -77,12 +78,19 @@ public class Participant implements Serializable {
     /**
      * A participant belongs to a project.
      */
-    @ManyToOne(optional = false)
-    @NotNull
-    @JsonIgnoreProperties("participants")
+    @JoinColumn(name = "project_id", insertable = false, updatable = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JsonIgnore
     private Project project;
 
-    @ManyToMany
+    @Column(name = "project_id")
+    @NotNull
+    private Long projectId;
+
+    @ManyToMany(
+        fetch = FetchType.LAZY,
+        cascade = { CascadeType.MERGE }
+    )
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     @JoinTable(name = "participant_labels",
                joinColumns = @JoinColumn(name = "participant_id", referencedColumnName = "id"),
@@ -137,17 +145,17 @@ public class Participant implements Serializable {
         this.birthdate = birthdate;
     }
 
-    public HandwritingMeans getHandedness() {
+    public HandwritingMean getHandedness() {
         return handedness;
     }
 
-    public Participant handedness(HandwritingMeans handedness) {
-        this.handedness = handedness;
+    public Participant handedness(HandwritingMean handwritingMean) {
+        this.handedness = handwritingMean;
         return this;
     }
 
-    public void setHandedness(HandwritingMeans handedness) {
-        this.handedness = handedness;
+    public void setHandedness(HandwritingMean handwritingMean) {
+        this.handedness = handwritingMean;
     }
 
     public String getAdditionalInfo() {
@@ -193,13 +201,17 @@ public class Participant implements Serializable {
         return project;
     }
 
-    public Participant project(Project project) {
-        this.project = project;
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public Participant projectId(Long projectId) {
+        this.projectId = projectId;
         return this;
     }
 
-    public void setProject(Project project) {
-        this.project = project;
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
     }
 
     public Set<Label> getLabels() {
@@ -251,7 +263,7 @@ public class Participant implements Serializable {
             ", name='" + getName() + "'" +
             ", gender='" + getGender() + "'" +
             ", birthdate='" + getBirthdate() + "'" +
-            ", handedness='" + getHandedness() + "'" +
+            ", handwritingMean='" + getHandedness() + "'" +
             ", additionalInfo='" + getAdditionalInfo() + "'" +
             ", image='" + getImage() + "'" +
             ", imageContentType='" + getImageContentType() + "'" +

@@ -13,7 +13,7 @@ import java.util.Objects;
  * A DTO for the {@link pt.up.hs.project.domain.Task} entity.
  */
 @ApiModel(description = "The Task entity.\n\n@author José Carlos Paiva")
-public class TaskDTO implements Serializable {
+public class TaskDTO extends AbstractAuditingDTO {
 
     private Long id;
 
@@ -47,7 +47,6 @@ public class TaskDTO implements Serializable {
      * A task belongs to a project.
      */
     @ApiModelProperty(value = "A task belongs to a project.")
-
     private Long projectId;
 
     private Set<LabelDTO> labels = new HashSet<>();

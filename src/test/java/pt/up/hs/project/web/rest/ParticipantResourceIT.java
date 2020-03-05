@@ -1,18 +1,5 @@
 package pt.up.hs.project.web.rest;
 
-import pt.up.hs.project.ProjectApp;
-import pt.up.hs.project.config.SecurityBeanOverrideConfiguration;
-import pt.up.hs.project.domain.Participant;
-import pt.up.hs.project.domain.Project;
-import pt.up.hs.project.domain.Label;
-import pt.up.hs.project.repository.ParticipantRepository;
-import pt.up.hs.project.service.ParticipantService;
-import pt.up.hs.project.service.dto.ParticipantDTO;
-import pt.up.hs.project.service.mapper.ParticipantMapper;
-import pt.up.hs.project.web.rest.errors.ExceptionTranslator;
-import pt.up.hs.project.service.dto.ParticipantCriteria;
-import pt.up.hs.project.service.ParticipantQueryService;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -20,31 +7,45 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Base64Utils;
 import org.springframework.validation.Validator;
+import pt.up.hs.project.ProjectApp;
+import pt.up.hs.project.config.SecurityBeanOverrideConfiguration;
+import pt.up.hs.project.domain.Label;
+import pt.up.hs.project.domain.Participant;
+import pt.up.hs.project.domain.Project;
+import pt.up.hs.project.domain.enumeration.Gender;
+import pt.up.hs.project.domain.enumeration.HandwritingMean;
+import pt.up.hs.project.repository.ParticipantRepository;
+import pt.up.hs.project.service.ParticipantQueryService;
+import pt.up.hs.project.service.ParticipantService;
+import pt.up.hs.project.service.dto.ParticipantDTO;
+import pt.up.hs.project.service.mapper.ParticipantMapper;
+import pt.up.hs.project.web.rest.errors.ExceptionTranslator;
 
 import javax.persistence.EntityManager;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
-import static pt.up.hs.project.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static pt.up.hs.project.web.rest.TestUtil.createFormattingConversionService;
 
-import pt.up.hs.project.domain.enumeration.Gender;
-import pt.up.hs.project.domain.enumeration.HandwritingMeans;
 /**
  * Integration tests for the {@link ParticipantResource} REST controller.
  */
@@ -61,8 +62,8 @@ public class ParticipantResourceIT {
     private static final LocalDate UPDATED_BIRTHDATE = LocalDate.now(ZoneId.systemDefault());
     private static final LocalDate SMALLER_BIRTHDATE = LocalDate.ofEpochDay(-1L);
 
-    private static final HandwritingMeans DEFAULT_HANDEDNESS = HandwritingMeans.LEFT_HAND;
-    private static final HandwritingMeans UPDATED_HANDEDNESS = HandwritingMeans.RIGHT_HAND;
+    private static final HandwritingMean DEFAULT_HANDWRITING_MEAN = HandwritingMean.LEFT_HAND;
+    private static final HandwritingMean UPDATED_HANDWRITING_MEAN = HandwritingMean.RIGHT_HAND;
 
     private static final String DEFAULT_ADDITIONAL_INFO = "AAAAAAAAAA";
     private static final String UPDATED_ADDITIONAL_INFO = "BBBBBBBBBB";
@@ -71,6 +72,29 @@ public class ParticipantResourceIT {
     private static final byte[] UPDATED_IMAGE = TestUtil.createByteArray(1, "1");
     private static final String DEFAULT_IMAGE_CONTENT_TYPE = "image/jpg";
     private static final String UPDATED_IMAGE_CONTENT_TYPE = "image/png";
+
+    private static final String CSV_PARTICIPANT_1_NAME = "John Doe";
+    private static final String CSV_PARTICIPANT_2_NAME = "Jane Doe";
+    private static final String CSV_PARTICIPANT_3_NAME = "John";
+    private static final String CSV_PARTICIPANT_4_NAME = "Jane";
+    private static final Gender CSV_PARTICIPANT_1_GENDER = Gender.MALE;
+    private static final Gender CSV_PARTICIPANT_2_GENDER = Gender.FEMALE;
+    private static final Gender CSV_PARTICIPANT_3_GENDER = Gender.MALE;
+    private static final Gender CSV_PARTICIPANT_4_GENDER = Gender.FEMALE;
+    private static final HandwritingMean CSV_PARTICIPANT_1_HANDEDNESS = HandwritingMean.LEFT_HAND;
+    private static final HandwritingMean CSV_PARTICIPANT_2_HANDEDNESS = HandwritingMean.OTHER;
+    private static final HandwritingMean CSV_PARTICIPANT_3_HANDEDNESS = HandwritingMean.LEFT_HAND;
+    private static final HandwritingMean CSV_PARTICIPANT_4_HANDEDNESS = HandwritingMean.RIGHT_HAND;
+    private static final String CSV_PARTICIPANT_1_BIRTHDATE = "2020-02-23";
+    private static final String CSV_PARTICIPANT_2_BIRTHDATE = "2020-02-23";
+    private static final String CSV_PARTICIPANT_3_BIRTHDATE = "2020-02-22";
+    private static final String CSV_PARTICIPANT_4_BIRTHDATE = "2020-02-23";
+    private static final String CSV_PARTICIPANT_1_ADDITIONAL_INFO = "multi-tasking";
+    private static final String CSV_PARTICIPANT_2_ADDITIONAL_INFO = "Run Avon, overriding";
+    private static final String CSV_PARTICIPANT_3_ADDITIONAL_INFO = "Buckinghamshire";
+    private static final String CSV_PARTICIPANT_4_ADDITIONAL_INFO = "Buckinghamshire";
+
+    private static final String DEFAULT_USERNAME = "system";
 
     @Autowired
     private ParticipantRepository participantRepository;
@@ -107,6 +131,7 @@ public class ParticipantResourceIT {
 
     private MockMvc restParticipantMockMvc;
 
+    private Long projectId;
     private Participant participant;
 
     @BeforeEach
@@ -123,62 +148,57 @@ public class ParticipantResourceIT {
 
     /**
      * Create an entity for this test.
-     *
+     * <p>
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Participant createEntity(EntityManager em) {
-        Participant participant = new Participant()
+    public static Participant createEntity(Long projectId) {
+        return new Participant()
             .name(DEFAULT_NAME)
             .gender(DEFAULT_GENDER)
             .birthdate(DEFAULT_BIRTHDATE)
-            .handedness(DEFAULT_HANDEDNESS)
+            .handedness(DEFAULT_HANDWRITING_MEAN)
             .additionalInfo(DEFAULT_ADDITIONAL_INFO)
             .image(DEFAULT_IMAGE)
-            .imageContentType(DEFAULT_IMAGE_CONTENT_TYPE);
-        // Add required entity
-        Project project;
-        if (TestUtil.findAll(em, Project.class).isEmpty()) {
-            project = ProjectResourceIT.createEntity(em);
-            em.persist(project);
-            em.flush();
-        } else {
-            project = TestUtil.findAll(em, Project.class).get(0);
-        }
-        participant.setProject(project);
-        return participant;
+            .imageContentType(DEFAULT_IMAGE_CONTENT_TYPE)
+            .projectId(projectId);
     }
+
     /**
      * Create an updated entity for this test.
-     *
+     * <p>
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Participant createUpdatedEntity(EntityManager em) {
-        Participant participant = new Participant()
+    public static Participant createUpdatedEntity(Long projectId) {
+        return new Participant()
             .name(UPDATED_NAME)
             .gender(UPDATED_GENDER)
             .birthdate(UPDATED_BIRTHDATE)
-            .handedness(UPDATED_HANDEDNESS)
+            .handedness(UPDATED_HANDWRITING_MEAN)
             .additionalInfo(UPDATED_ADDITIONAL_INFO)
             .image(UPDATED_IMAGE)
-            .imageContentType(UPDATED_IMAGE_CONTENT_TYPE);
+            .imageContentType(UPDATED_IMAGE_CONTENT_TYPE)
+            .projectId(projectId);
+    }
+
+    private static Project getProject(EntityManager em, Project entity) {
         // Add required entity
         Project project;
         if (TestUtil.findAll(em, Project.class).isEmpty()) {
-            project = ProjectResourceIT.createUpdatedEntity(em);
+            project = entity;
             em.persist(project);
             em.flush();
         } else {
             project = TestUtil.findAll(em, Project.class).get(0);
         }
-        participant.setProject(project);
-        return participant;
+        return project;
     }
 
     @BeforeEach
     public void initTest() {
-        participant = createEntity(em);
+        projectId = getProject(em, ProjectResourceIT.createEntity(em)).getId();
+        participant = createEntity(projectId);
     }
 
     @Test
@@ -186,9 +206,12 @@ public class ParticipantResourceIT {
     public void createParticipant() throws Exception {
         int databaseSizeBeforeCreate = participantRepository.findAll().size();
 
+        // date before create
+        Instant beforeInstant = Instant.now();
+
         // Create the Participant
         ParticipantDTO participantDTO = participantMapper.toDto(participant);
-        restParticipantMockMvc.perform(post("/api/participants")
+        restParticipantMockMvc.perform(post("/api/projects/{projectId}/participants", projectId)
             .contentType(TestUtil.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(participantDTO)))
             .andExpect(status().isCreated());
@@ -200,10 +223,12 @@ public class ParticipantResourceIT {
         assertThat(testParticipant.getName()).isEqualTo(DEFAULT_NAME);
         assertThat(testParticipant.getGender()).isEqualTo(DEFAULT_GENDER);
         assertThat(testParticipant.getBirthdate()).isEqualTo(DEFAULT_BIRTHDATE);
-        assertThat(testParticipant.getHandedness()).isEqualTo(DEFAULT_HANDEDNESS);
+        assertThat(testParticipant.getHandedness()).isEqualTo(DEFAULT_HANDWRITING_MEAN);
         assertThat(testParticipant.getAdditionalInfo()).isEqualTo(DEFAULT_ADDITIONAL_INFO);
         assertThat(testParticipant.getImage()).isEqualTo(DEFAULT_IMAGE);
         assertThat(testParticipant.getImageContentType()).isEqualTo(DEFAULT_IMAGE_CONTENT_TYPE);
+        assertThat(testParticipant.getCreatedBy()).isEqualTo(DEFAULT_USERNAME);
+        assertThat(testParticipant.getCreatedDate()).isStrictlyBetween(beforeInstant, Instant.now());
     }
 
     @Test
@@ -216,7 +241,7 @@ public class ParticipantResourceIT {
         ParticipantDTO participantDTO = participantMapper.toDto(participant);
 
         // An entity with an existing ID cannot be created, so this API call must fail
-        restParticipantMockMvc.perform(post("/api/participants")
+        restParticipantMockMvc.perform(post("/api/projects/{projectId}/participants", projectId)
             .contentType(TestUtil.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(participantDTO)))
             .andExpect(status().isBadRequest());
@@ -237,7 +262,7 @@ public class ParticipantResourceIT {
         // Create the Participant, which fails.
         ParticipantDTO participantDTO = participantMapper.toDto(participant);
 
-        restParticipantMockMvc.perform(post("/api/participants")
+        restParticipantMockMvc.perform(post("/api/projects/{projectId}/participants", projectId)
             .contentType(TestUtil.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(participantDTO)))
             .andExpect(status().isBadRequest());
@@ -253,23 +278,27 @@ public class ParticipantResourceIT {
         participantRepository.saveAndFlush(participant);
 
         // Get all the participantList
-        restParticipantMockMvc.perform(get("/api/participants?sort=id,desc"))
+        ResultActions resultActions = restParticipantMockMvc.perform(get("/api/projects/{projectId}/participants?sort=id,desc", projectId));
+        resultActions
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(participant.getId().intValue())))
             .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
             .andExpect(jsonPath("$.[*].gender").value(hasItem(DEFAULT_GENDER.toString())))
             .andExpect(jsonPath("$.[*].birthdate").value(hasItem(DEFAULT_BIRTHDATE.toString())))
-            .andExpect(jsonPath("$.[*].handedness").value(hasItem(DEFAULT_HANDEDNESS.toString())))
+            .andExpect(jsonPath("$.[*].handedness").value(hasItem(DEFAULT_HANDWRITING_MEAN.toString())))
             .andExpect(jsonPath("$.[*].additionalInfo").value(hasItem(DEFAULT_ADDITIONAL_INFO)))
             .andExpect(jsonPath("$.[*].imageContentType").value(hasItem(DEFAULT_IMAGE_CONTENT_TYPE)))
-            .andExpect(jsonPath("$.[*].image").value(hasItem(Base64Utils.encodeToString(DEFAULT_IMAGE))));
+            .andExpect(jsonPath("$.[*].image").value(hasItem(Base64Utils.encodeToString(DEFAULT_IMAGE))))
+            .andExpect(jsonPath("$.[*].labels").isArray())
+            .andExpect(jsonPath("$.[*].createdBy").value(hasItem(DEFAULT_USERNAME)))
+            .andExpect(jsonPath("$.[*].createdDate").exists());
     }
 
     @SuppressWarnings({"unchecked"})
     public void getAllParticipantsWithEagerRelationshipsIsEnabled() throws Exception {
         ParticipantResource participantResource = new ParticipantResource(participantServiceMock, participantQueryService);
-        when(participantServiceMock.findAllWithEagerRelationships(any())).thenReturn(new PageImpl(new ArrayList<>()));
+        when(participantServiceMock.findAllWithEagerRelationships(projectId, any())).thenReturn(new PageImpl<>(new ArrayList<>()));
 
         MockMvc restParticipantMockMvc = MockMvcBuilders.standaloneSetup(participantResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
@@ -278,25 +307,25 @@ public class ParticipantResourceIT {
             .setMessageConverters(jacksonMessageConverter).build();
 
         restParticipantMockMvc.perform(get("/api/participants?eagerload=true"))
-        .andExpect(status().isOk());
+            .andExpect(status().isOk());
 
-        verify(participantServiceMock, times(1)).findAllWithEagerRelationships(any());
+        verify(participantServiceMock, times(1)).findAllWithEagerRelationships(projectId, any());
     }
 
     @SuppressWarnings({"unchecked"})
     public void getAllParticipantsWithEagerRelationshipsIsNotEnabled() throws Exception {
         ParticipantResource participantResource = new ParticipantResource(participantServiceMock, participantQueryService);
-            when(participantServiceMock.findAllWithEagerRelationships(any())).thenReturn(new PageImpl(new ArrayList<>()));
-            MockMvc restParticipantMockMvc = MockMvcBuilders.standaloneSetup(participantResource)
+        when(participantServiceMock.findAllWithEagerRelationships(projectId, any())).thenReturn(new PageImpl<>(new ArrayList<>()));
+        MockMvc restParticipantMockMvc = MockMvcBuilders.standaloneSetup(participantResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
             .setControllerAdvice(exceptionTranslator)
             .setConversionService(createFormattingConversionService())
             .setMessageConverters(jacksonMessageConverter).build();
 
-        restParticipantMockMvc.perform(get("/api/participants?eagerload=true"))
-        .andExpect(status().isOk());
+        restParticipantMockMvc.perform(get("/api/projects/{projectId}/participants?eagerload=true", projectId))
+            .andExpect(status().isOk());
 
-            verify(participantServiceMock, times(1)).findAllWithEagerRelationships(any());
+        verify(participantServiceMock, times(1)).findAllWithEagerRelationships(projectId, any());
     }
 
     @Test
@@ -306,19 +335,21 @@ public class ParticipantResourceIT {
         participantRepository.saveAndFlush(participant);
 
         // Get the participant
-        restParticipantMockMvc.perform(get("/api/participants/{id}", participant.getId()))
+        restParticipantMockMvc.perform(get("/api/projects/{projectId}/participants/{id}", projectId, participant.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.id").value(participant.getId().intValue()))
             .andExpect(jsonPath("$.name").value(DEFAULT_NAME))
             .andExpect(jsonPath("$.gender").value(DEFAULT_GENDER.toString()))
             .andExpect(jsonPath("$.birthdate").value(DEFAULT_BIRTHDATE.toString()))
-            .andExpect(jsonPath("$.handedness").value(DEFAULT_HANDEDNESS.toString()))
+            .andExpect(jsonPath("$.handedness").value(DEFAULT_HANDWRITING_MEAN.toString()))
             .andExpect(jsonPath("$.additionalInfo").value(DEFAULT_ADDITIONAL_INFO))
             .andExpect(jsonPath("$.imageContentType").value(DEFAULT_IMAGE_CONTENT_TYPE))
-            .andExpect(jsonPath("$.image").value(Base64Utils.encodeToString(DEFAULT_IMAGE)));
+            .andExpect(jsonPath("$.image").value(Base64Utils.encodeToString(DEFAULT_IMAGE)))
+            .andExpect(jsonPath("$.labels").isArray())
+            .andExpect(jsonPath("$.createdBy").value(DEFAULT_USERNAME))
+            .andExpect(jsonPath("$.createdDate").exists());
     }
-
 
     @Test
     @Transactional
@@ -581,10 +612,10 @@ public class ParticipantResourceIT {
         participantRepository.saveAndFlush(participant);
 
         // Get all the participantList where handedness equals to DEFAULT_HANDEDNESS
-        defaultParticipantShouldBeFound("handedness.equals=" + DEFAULT_HANDEDNESS);
+        defaultParticipantShouldBeFound("handedness.equals=" + DEFAULT_HANDWRITING_MEAN);
 
         // Get all the participantList where handedness equals to UPDATED_HANDEDNESS
-        defaultParticipantShouldNotBeFound("handedness.equals=" + UPDATED_HANDEDNESS);
+        defaultParticipantShouldNotBeFound("handedness.equals=" + UPDATED_HANDWRITING_MEAN);
     }
 
     @Test
@@ -594,10 +625,10 @@ public class ParticipantResourceIT {
         participantRepository.saveAndFlush(participant);
 
         // Get all the participantList where handedness not equals to DEFAULT_HANDEDNESS
-        defaultParticipantShouldNotBeFound("handedness.notEquals=" + DEFAULT_HANDEDNESS);
+        defaultParticipantShouldNotBeFound("handedness.notEquals=" + DEFAULT_HANDWRITING_MEAN);
 
         // Get all the participantList where handedness not equals to UPDATED_HANDEDNESS
-        defaultParticipantShouldBeFound("handedness.notEquals=" + UPDATED_HANDEDNESS);
+        defaultParticipantShouldBeFound("handedness.notEquals=" + UPDATED_HANDWRITING_MEAN);
     }
 
     @Test
@@ -607,10 +638,10 @@ public class ParticipantResourceIT {
         participantRepository.saveAndFlush(participant);
 
         // Get all the participantList where handedness in DEFAULT_HANDEDNESS or UPDATED_HANDEDNESS
-        defaultParticipantShouldBeFound("handedness.in=" + DEFAULT_HANDEDNESS + "," + UPDATED_HANDEDNESS);
+        defaultParticipantShouldBeFound("handedness.in=" + DEFAULT_HANDWRITING_MEAN + "," + UPDATED_HANDWRITING_MEAN);
 
         // Get all the participantList where handedness equals to UPDATED_HANDEDNESS
-        defaultParticipantShouldNotBeFound("handedness.in=" + UPDATED_HANDEDNESS);
+        defaultParticipantShouldNotBeFound("handedness.in=" + UPDATED_HANDWRITING_MEAN);
     }
 
     @Test
@@ -677,7 +708,8 @@ public class ParticipantResourceIT {
         // Get all the participantList where additionalInfo is null
         defaultParticipantShouldNotBeFound("additionalInfo.specified=false");
     }
-                @Test
+
+    @Test
     @Transactional
     public void getAllParticipantsByAdditionalInfoContainsSomething() throws Exception {
         // Initialize the database
@@ -706,26 +738,10 @@ public class ParticipantResourceIT {
 
     @Test
     @Transactional
-    public void getAllParticipantsByProjectIsEqualToSomething() throws Exception {
-        // Get already existing entity
-        Project project = participant.getProject();
-        participantRepository.saveAndFlush(participant);
-        Long projectId = project.getId();
-
-        // Get all the participantList where project equals to projectId
-        defaultParticipantShouldBeFound("projectId.equals=" + projectId);
-
-        // Get all the participantList where project equals to projectId + 1
-        defaultParticipantShouldNotBeFound("projectId.equals=" + (projectId + 1));
-    }
-
-
-    @Test
-    @Transactional
     public void getAllParticipantsByLabelsIsEqualToSomething() throws Exception {
         // Initialize the database
         participantRepository.saveAndFlush(participant);
-        Label labels = LabelResourceIT.createEntity(em);
+        Label labels = LabelResourceIT.createEntity(projectId);
         em.persist(labels);
         em.flush();
         participant.addLabels(labels);
@@ -743,20 +759,23 @@ public class ParticipantResourceIT {
      * Executes the search, and checks that the default entity is returned.
      */
     private void defaultParticipantShouldBeFound(String filter) throws Exception {
-        restParticipantMockMvc.perform(get("/api/participants?sort=id,desc&" + filter))
+        restParticipantMockMvc.perform(get("/api/projects/{projectId}/participants?sort=id,desc&" + filter, projectId))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(participant.getId().intValue())))
             .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
             .andExpect(jsonPath("$.[*].gender").value(hasItem(DEFAULT_GENDER.toString())))
             .andExpect(jsonPath("$.[*].birthdate").value(hasItem(DEFAULT_BIRTHDATE.toString())))
-            .andExpect(jsonPath("$.[*].handedness").value(hasItem(DEFAULT_HANDEDNESS.toString())))
+            .andExpect(jsonPath("$.[*].handedness").value(hasItem(DEFAULT_HANDWRITING_MEAN.toString())))
             .andExpect(jsonPath("$.[*].additionalInfo").value(hasItem(DEFAULT_ADDITIONAL_INFO)))
             .andExpect(jsonPath("$.[*].imageContentType").value(hasItem(DEFAULT_IMAGE_CONTENT_TYPE)))
-            .andExpect(jsonPath("$.[*].image").value(hasItem(Base64Utils.encodeToString(DEFAULT_IMAGE))));
+            .andExpect(jsonPath("$.[*].image").value(hasItem(Base64Utils.encodeToString(DEFAULT_IMAGE))))
+            .andExpect(jsonPath("$.[*].labels").isArray())
+            .andExpect(jsonPath("$.[*].createdBy").value(hasItem(DEFAULT_USERNAME)))
+            .andExpect(jsonPath("$.[*].createdDate").exists());
 
         // Check, that the count call also returns 1
-        restParticipantMockMvc.perform(get("/api/participants/count?sort=id,desc&" + filter))
+        restParticipantMockMvc.perform(get("/api/projects/{projectId}/participants/count?sort=id,desc&" + filter, projectId))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(content().string("1"));
@@ -766,14 +785,14 @@ public class ParticipantResourceIT {
      * Executes the search, and checks that the default entity is not returned.
      */
     private void defaultParticipantShouldNotBeFound(String filter) throws Exception {
-        restParticipantMockMvc.perform(get("/api/participants?sort=id,desc&" + filter))
+        restParticipantMockMvc.perform(get("/api/projects/{projectId}/participants?sort=id,desc&" + filter, projectId))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$").isArray())
             .andExpect(jsonPath("$").isEmpty());
 
         // Check, that the count call also returns 0
-        restParticipantMockMvc.perform(get("/api/participants/count?sort=id,desc&" + filter))
+        restParticipantMockMvc.perform(get("/api/projects/{projectId}/participants/count?sort=id,desc&" + filter, projectId))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(content().string("0"));
@@ -784,15 +803,20 @@ public class ParticipantResourceIT {
     @Transactional
     public void getNonExistingParticipant() throws Exception {
         // Get the participant
-        restParticipantMockMvc.perform(get("/api/participants/{id}", Long.MAX_VALUE))
+        restParticipantMockMvc.perform(get("/api/projects/{projectId}/participants/{id}", projectId, Long.MAX_VALUE))
             .andExpect(status().isNotFound());
     }
 
     @Test
     @Transactional
     public void updateParticipant() throws Exception {
+
+        Instant beforeCreateInstant = Instant.now();
+
         // Initialize the database
         participantRepository.saveAndFlush(participant);
+
+        Instant afterCreateInstant = Instant.now();
 
         int databaseSizeBeforeUpdate = participantRepository.findAll().size();
 
@@ -804,13 +828,15 @@ public class ParticipantResourceIT {
             .name(UPDATED_NAME)
             .gender(UPDATED_GENDER)
             .birthdate(UPDATED_BIRTHDATE)
-            .handedness(UPDATED_HANDEDNESS)
+            .handedness(UPDATED_HANDWRITING_MEAN)
             .additionalInfo(UPDATED_ADDITIONAL_INFO)
             .image(UPDATED_IMAGE)
             .imageContentType(UPDATED_IMAGE_CONTENT_TYPE);
         ParticipantDTO participantDTO = participantMapper.toDto(updatedParticipant);
 
-        restParticipantMockMvc.perform(put("/api/participants")
+        Instant beforeUpdateInstant = Instant.now();
+
+        restParticipantMockMvc.perform(put("/api/projects/{projectId}/participants", projectId)
             .contentType(TestUtil.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(participantDTO)))
             .andExpect(status().isOk());
@@ -822,10 +848,12 @@ public class ParticipantResourceIT {
         assertThat(testParticipant.getName()).isEqualTo(UPDATED_NAME);
         assertThat(testParticipant.getGender()).isEqualTo(UPDATED_GENDER);
         assertThat(testParticipant.getBirthdate()).isEqualTo(UPDATED_BIRTHDATE);
-        assertThat(testParticipant.getHandedness()).isEqualTo(UPDATED_HANDEDNESS);
+        assertThat(testParticipant.getHandedness()).isEqualTo(UPDATED_HANDWRITING_MEAN);
         assertThat(testParticipant.getAdditionalInfo()).isEqualTo(UPDATED_ADDITIONAL_INFO);
         assertThat(testParticipant.getImage()).isEqualTo(UPDATED_IMAGE);
         assertThat(testParticipant.getImageContentType()).isEqualTo(UPDATED_IMAGE_CONTENT_TYPE);
+        assertThat(testParticipant.getCreatedDate()).isStrictlyBetween(beforeCreateInstant, afterCreateInstant);
+        assertThat(testParticipant.getLastModifiedDate()).isStrictlyBetween(beforeUpdateInstant, Instant.now());
     }
 
     @Test
@@ -837,7 +865,7 @@ public class ParticipantResourceIT {
         ParticipantDTO participantDTO = participantMapper.toDto(participant);
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
-        restParticipantMockMvc.perform(put("/api/participants")
+        restParticipantMockMvc.perform(put("/api/projects/{projectId}/participants", projectId)
             .contentType(TestUtil.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(participantDTO)))
             .andExpect(status().isBadRequest());
@@ -856,12 +884,171 @@ public class ParticipantResourceIT {
         int databaseSizeBeforeDelete = participantRepository.findAll().size();
 
         // Delete the participant
-        restParticipantMockMvc.perform(delete("/api/participants/{id}", participant.getId())
+        restParticipantMockMvc.perform(delete("/api/projects/{projectId}/participants/{id}", projectId, participant.getId())
             .accept(TestUtil.APPLICATION_JSON))
             .andExpect(status().isNoContent());
 
         // Validate the database contains one less item
         List<Participant> participantList = participantRepository.findAll();
         assertThat(participantList).hasSize(databaseSizeBeforeDelete - 1);
+    }
+
+    @Test
+    @Transactional
+    public void importParticipantsCsv() throws Exception {
+        // read file
+        byte[] content = TestUtil.readFileFromResourcesFolder("data/participants/participants.csv");
+        MockMultipartFile file = new MockMultipartFile("file", "participants.csv", null, content);
+
+        // Import the participants' CSV
+        restParticipantMockMvc
+            .perform(
+                MockMvcRequestBuilders
+                    .multipart("/api/projects/{projectId}/participants/import", projectId)
+                    .file(file)
+            )
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.total").value(4))
+            .andExpect(jsonPath("$.invalid").value(0))
+            .andExpect(jsonPath("$.data.[*].name").value(containsInAnyOrder(CSV_PARTICIPANT_1_NAME, CSV_PARTICIPANT_2_NAME, CSV_PARTICIPANT_3_NAME, CSV_PARTICIPANT_4_NAME)))
+            .andExpect(jsonPath("$.data.[*].gender").value(containsInAnyOrder(CSV_PARTICIPANT_1_GENDER.toString(), CSV_PARTICIPANT_2_GENDER.toString(), CSV_PARTICIPANT_3_GENDER.toString(), CSV_PARTICIPANT_4_GENDER.toString())))
+            .andExpect(jsonPath("$.data.[*].handedness").value(containsInAnyOrder(CSV_PARTICIPANT_1_HANDEDNESS.toString(), CSV_PARTICIPANT_2_HANDEDNESS.toString(), CSV_PARTICIPANT_3_HANDEDNESS.toString(), CSV_PARTICIPANT_4_HANDEDNESS.toString())))
+            .andExpect(jsonPath("$.data.[*].birthdate").value(containsInAnyOrder(CSV_PARTICIPANT_1_BIRTHDATE, CSV_PARTICIPANT_2_BIRTHDATE, CSV_PARTICIPANT_3_BIRTHDATE, CSV_PARTICIPANT_4_BIRTHDATE)))
+            .andExpect(jsonPath("$.data.[*].additionalInfo").value(containsInAnyOrder(CSV_PARTICIPANT_1_ADDITIONAL_INFO, CSV_PARTICIPANT_2_ADDITIONAL_INFO, CSV_PARTICIPANT_3_ADDITIONAL_INFO, CSV_PARTICIPANT_4_ADDITIONAL_INFO)))
+            .andExpect(jsonPath("$.data.[*].labels.length()").value(containsInAnyOrder(2, 1, 0, 1)));
+    }
+
+    @Test
+    @Transactional
+    public void importParticipantsCsvNoHeader() throws Exception {
+        // read file
+        byte[] content = TestUtil.readFileFromResourcesFolder("data/participants/participants-no-header.csv");
+        MockMultipartFile file = new MockMultipartFile("file", "participants-no-header.csv", null, content);
+
+        // Import the participants' CSV
+        restParticipantMockMvc
+            .perform(
+                MockMvcRequestBuilders
+                    .multipart("/api/projects/{projectId}/participants/import", projectId)
+                    .file(file)
+                    .queryParam("use-header", "false")
+            )
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.total").value(4))
+            .andExpect(jsonPath("$.invalid").value(0))
+            .andExpect(jsonPath("$.data.[*].name").value(containsInAnyOrder(CSV_PARTICIPANT_1_NAME, CSV_PARTICIPANT_2_NAME, CSV_PARTICIPANT_3_NAME, CSV_PARTICIPANT_4_NAME)))
+            .andExpect(jsonPath("$.data.[*].gender").value(containsInAnyOrder(CSV_PARTICIPANT_1_GENDER.toString(), CSV_PARTICIPANT_2_GENDER.toString(), CSV_PARTICIPANT_3_GENDER.toString(), CSV_PARTICIPANT_4_GENDER.toString())))
+            .andExpect(jsonPath("$.data.[*].handedness").value(containsInAnyOrder(CSV_PARTICIPANT_1_HANDEDNESS.toString(), CSV_PARTICIPANT_2_HANDEDNESS.toString(), CSV_PARTICIPANT_3_HANDEDNESS.toString(), CSV_PARTICIPANT_4_HANDEDNESS.toString())))
+            .andExpect(jsonPath("$.data.[*].birthdate").value(containsInAnyOrder(CSV_PARTICIPANT_1_BIRTHDATE, CSV_PARTICIPANT_2_BIRTHDATE, CSV_PARTICIPANT_3_BIRTHDATE, CSV_PARTICIPANT_4_BIRTHDATE)))
+            .andExpect(jsonPath("$.data.[*].additionalInfo").value(containsInAnyOrder(CSV_PARTICIPANT_1_ADDITIONAL_INFO, CSV_PARTICIPANT_2_ADDITIONAL_INFO, CSV_PARTICIPANT_3_ADDITIONAL_INFO, CSV_PARTICIPANT_4_ADDITIONAL_INFO)))
+            .andExpect(jsonPath("$.data.[*].labels.length()").value(containsInAnyOrder(2, 1, 0, 1)));
+    }
+
+    @Test
+    @Transactional
+    public void importParticipantsCsvDiffColumnOrder() throws Exception {
+        // read file
+        byte[] content = TestUtil.readFileFromResourcesFolder("data/participants/participants-diff-column-order.csv");
+        MockMultipartFile file = new MockMultipartFile("file", "participants-diff-column-order.csv", null, content);
+
+        // Import the participants' CSV
+        restParticipantMockMvc
+            .perform(
+                MockMvcRequestBuilders
+                    .multipart("/api/projects/{projectId}/participants/import", projectId)
+                    .file(file)
+            )
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.total").value(4))
+            .andExpect(jsonPath("$.invalid").value(0))
+            .andExpect(jsonPath("$.data.[*].name").value(containsInAnyOrder(CSV_PARTICIPANT_1_NAME, CSV_PARTICIPANT_2_NAME, CSV_PARTICIPANT_3_NAME, CSV_PARTICIPANT_4_NAME)))
+            .andExpect(jsonPath("$.data.[*].gender").value(containsInAnyOrder(CSV_PARTICIPANT_1_GENDER.toString(), CSV_PARTICIPANT_2_GENDER.toString(), CSV_PARTICIPANT_3_GENDER.toString(), CSV_PARTICIPANT_4_GENDER.toString())))
+            .andExpect(jsonPath("$.data.[*].handedness").value(containsInAnyOrder(CSV_PARTICIPANT_1_HANDEDNESS.toString(), CSV_PARTICIPANT_2_HANDEDNESS.toString(), CSV_PARTICIPANT_3_HANDEDNESS.toString(), CSV_PARTICIPANT_4_HANDEDNESS.toString())))
+            .andExpect(jsonPath("$.data.[*].birthdate").value(containsInAnyOrder(CSV_PARTICIPANT_1_BIRTHDATE, CSV_PARTICIPANT_2_BIRTHDATE, CSV_PARTICIPANT_3_BIRTHDATE, CSV_PARTICIPANT_4_BIRTHDATE)))
+            .andExpect(jsonPath("$.data.[*].additionalInfo").value(containsInAnyOrder(CSV_PARTICIPANT_1_ADDITIONAL_INFO, CSV_PARTICIPANT_2_ADDITIONAL_INFO, CSV_PARTICIPANT_3_ADDITIONAL_INFO, CSV_PARTICIPANT_4_ADDITIONAL_INFO)))
+            .andExpect(jsonPath("$.data.[*].labels.length()").value(containsInAnyOrder(2, 1, 0, 1)));
+    }
+
+    @Test
+    @Transactional
+    public void importParticipantsCsvDiffSep() throws Exception {
+        // read file
+        byte[] content = TestUtil.readFileFromResourcesFolder("data/participants/participants-diff-sep.csv");
+        MockMultipartFile file = new MockMultipartFile("file", "participants-diff-sep.csv", null, content);
+
+        // Import the participants' CSV
+        restParticipantMockMvc
+            .perform(
+                MockMvcRequestBuilders
+                    .multipart("/api/projects/{projectId}/participants/import", projectId)
+                    .file(file)
+                    .queryParam("sep", ";")
+                    .queryParam("array-sep", ",")
+            )
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.total").value(4))
+            .andExpect(jsonPath("$.invalid").value(0))
+            .andExpect(jsonPath("$.data.[*].name").value(containsInAnyOrder(CSV_PARTICIPANT_1_NAME, CSV_PARTICIPANT_2_NAME, CSV_PARTICIPANT_3_NAME, CSV_PARTICIPANT_4_NAME)))
+            .andExpect(jsonPath("$.data.[*].gender").value(containsInAnyOrder(CSV_PARTICIPANT_1_GENDER.toString(), CSV_PARTICIPANT_2_GENDER.toString(), CSV_PARTICIPANT_3_GENDER.toString(), CSV_PARTICIPANT_4_GENDER.toString())))
+            .andExpect(jsonPath("$.data.[*].handedness").value(containsInAnyOrder(CSV_PARTICIPANT_1_HANDEDNESS.toString(), CSV_PARTICIPANT_2_HANDEDNESS.toString(), CSV_PARTICIPANT_3_HANDEDNESS.toString(), CSV_PARTICIPANT_4_HANDEDNESS.toString())))
+            .andExpect(jsonPath("$.data.[*].birthdate").value(containsInAnyOrder(CSV_PARTICIPANT_1_BIRTHDATE, CSV_PARTICIPANT_2_BIRTHDATE, CSV_PARTICIPANT_3_BIRTHDATE, CSV_PARTICIPANT_4_BIRTHDATE)))
+            .andExpect(jsonPath("$.data.[*].additionalInfo").value(containsInAnyOrder(CSV_PARTICIPANT_1_ADDITIONAL_INFO, CSV_PARTICIPANT_2_ADDITIONAL_INFO, CSV_PARTICIPANT_3_ADDITIONAL_INFO, CSV_PARTICIPANT_4_ADDITIONAL_INFO)))
+            .andExpect(jsonPath("$.data.[*].labels.length()").value(containsInAnyOrder(2, 1, 0, 1)));
+    }
+
+    @Test
+    @Transactional
+    public void importParticipantsCsvWrongColumns() throws Exception {
+        // read file
+        byte[] content = TestUtil.readFileFromResourcesFolder("data/participants/participants-wrong-columns.csv");
+        MockMultipartFile file = new MockMultipartFile("file", "participants-wrong-columns.csv", null, content);
+
+        // Import the participants' CSV
+        restParticipantMockMvc
+            .perform(
+                MockMvcRequestBuilders
+                    .multipart("/api/projects/{projectId}/participants/import", projectId)
+                    .file(file)
+            )
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.total").value(4))
+            .andExpect(jsonPath("$.invalid").value(0))
+            .andExpect(jsonPath("$.data.[*].name").value(containsInAnyOrder(CSV_PARTICIPANT_1_NAME, CSV_PARTICIPANT_2_NAME, CSV_PARTICIPANT_3_NAME, CSV_PARTICIPANT_4_NAME)))
+            .andExpect(jsonPath("$.data.[*].gender").value(containsInAnyOrder(CSV_PARTICIPANT_1_GENDER.toString(), CSV_PARTICIPANT_2_GENDER.toString(), CSV_PARTICIPANT_3_GENDER.toString(), CSV_PARTICIPANT_4_GENDER.toString())))
+            .andExpect(jsonPath("$.data.[*].handedness").value(containsInAnyOrder(nullValue(), nullValue(), nullValue(), nullValue())))
+            .andExpect(jsonPath("$.data.[*].birthdate").value(containsInAnyOrder(CSV_PARTICIPANT_1_BIRTHDATE, CSV_PARTICIPANT_2_BIRTHDATE, CSV_PARTICIPANT_3_BIRTHDATE, CSV_PARTICIPANT_4_BIRTHDATE)))
+            .andExpect(jsonPath("$.data.[*].additionalInfo").value(containsInAnyOrder(nullValue(), nullValue(), nullValue(), nullValue())))
+            .andExpect(jsonPath("$.data.[*].labels.length()").value(containsInAnyOrder(2, 1, 0, 1)));
+    }
+
+    @Test
+    @Transactional
+    public void importParticipantsCsvInvalidRecord() throws Exception {
+        // read file
+        byte[] content = TestUtil.readFileFromResourcesFolder("data/participants/participants-invalid-record.csv");
+        MockMultipartFile file = new MockMultipartFile("file", "participants-invalid-record.csv", null, content);
+
+        // Import the participants' CSV
+        restParticipantMockMvc
+            .perform(
+                MockMvcRequestBuilders
+                    .multipart("/api/projects/{projectId}/participants/import", projectId)
+                    .file(file)
+            )
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.total").value(3))
+            .andExpect(jsonPath("$.invalid").value(1))
+            .andExpect(jsonPath("$.data.[*].name").value(containsInAnyOrder(CSV_PARTICIPANT_2_NAME, CSV_PARTICIPANT_3_NAME, CSV_PARTICIPANT_4_NAME)))
+            .andExpect(jsonPath("$.data.[*].gender").value(containsInAnyOrder(CSV_PARTICIPANT_2_GENDER.toString(), CSV_PARTICIPANT_3_GENDER.toString(), CSV_PARTICIPANT_4_GENDER.toString())))
+            .andExpect(jsonPath("$.data.[*].handedness").value(containsInAnyOrder(CSV_PARTICIPANT_2_HANDEDNESS.toString(), CSV_PARTICIPANT_3_HANDEDNESS.toString(), CSV_PARTICIPANT_4_HANDEDNESS.toString())))
+            .andExpect(jsonPath("$.data.[*].birthdate").value(containsInAnyOrder(CSV_PARTICIPANT_2_BIRTHDATE, CSV_PARTICIPANT_3_BIRTHDATE, CSV_PARTICIPANT_4_BIRTHDATE)))
+            .andExpect(jsonPath("$.data.[*].additionalInfo").value(containsInAnyOrder(CSV_PARTICIPANT_2_ADDITIONAL_INFO, CSV_PARTICIPANT_3_ADDITIONAL_INFO, CSV_PARTICIPANT_4_ADDITIONAL_INFO)))
+            .andExpect(jsonPath("$.data.[*].labels.length()").value(containsInAnyOrder(1, 0, 1)));
     }
 }

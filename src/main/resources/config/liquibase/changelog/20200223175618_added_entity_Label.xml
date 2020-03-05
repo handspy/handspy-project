@@ -6,7 +6,7 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd
                         http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
-    
+
     <!--
         Added the entity Label.
     -->
@@ -19,7 +19,6 @@
                 <constraints nullable="false" />
             </column>
             <column name="color" type="varchar(20)" remarks="Color of the label">
-                <constraints nullable="false" />
             </column>
             <column name="project_id" type="bigint">
                 <constraints nullable="false" />

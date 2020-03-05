@@ -11,7 +11,6 @@ import io.github.jhipster.service.filter.FloatFilter;
 import io.github.jhipster.service.filter.IntegerFilter;
 import io.github.jhipster.service.filter.LongFilter;
 import io.github.jhipster.service.filter.StringFilter;
-import io.github.jhipster.service.filter.LocalDateFilter;
 
 /**
  * Criteria class for the {@link pt.up.hs.project.domain.Project} entity. This class is used
@@ -50,13 +49,15 @@ public class ProjectCriteria implements Serializable, Criteria {
 
     private StringFilter description;
 
-    private LocalDateFilter startDate;
-
-    private LocalDateFilter endDate;
-
     private ProjectStatusFilter status;
 
     private LongFilter owner;
+
+    private StringFilter color;
+
+    private LongFilter tasksId;
+
+    private LongFilter participantsId;
 
     public ProjectCriteria() {
     }
@@ -65,10 +66,11 @@ public class ProjectCriteria implements Serializable, Criteria {
         this.id = other.id == null ? null : other.id.copy();
         this.name = other.name == null ? null : other.name.copy();
         this.description = other.description == null ? null : other.description.copy();
-        this.startDate = other.startDate == null ? null : other.startDate.copy();
-        this.endDate = other.endDate == null ? null : other.endDate.copy();
         this.status = other.status == null ? null : other.status.copy();
         this.owner = other.owner == null ? null : other.owner.copy();
+        this.color = other.color == null ? null : other.color.copy();
+        this.tasksId = other.tasksId == null ? null : other.tasksId.copy();
+        this.participantsId = other.participantsId == null ? null : other.participantsId.copy();
     }
 
     @Override
@@ -100,22 +102,6 @@ public class ProjectCriteria implements Serializable, Criteria {
         this.description = description;
     }
 
-    public LocalDateFilter getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(LocalDateFilter startDate) {
-        this.startDate = startDate;
-    }
-
-    public LocalDateFilter getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDateFilter endDate) {
-        this.endDate = endDate;
-    }
-
     public ProjectStatusFilter getStatus() {
         return status;
     }
@@ -132,6 +118,30 @@ public class ProjectCriteria implements Serializable, Criteria {
         this.owner = owner;
     }
 
+    public StringFilter getColor() {
+        return color;
+    }
+
+    public void setColor(StringFilter color) {
+        this.color = color;
+    }
+
+    public LongFilter getTasksId() {
+        return tasksId;
+    }
+
+    public void setTasksId(LongFilter tasksId) {
+        this.tasksId = tasksId;
+    }
+
+    public LongFilter getParticipantsId() {
+        return participantsId;
+    }
+
+    public void setParticipantsId(LongFilter participantsId) {
+        this.participantsId = participantsId;
+    }
+
 
     @Override
     public boolean equals(Object o) {
@@ -146,10 +156,11 @@ public class ProjectCriteria implements Serializable, Criteria {
             Objects.equals(id, that.id) &&
             Objects.equals(name, that.name) &&
             Objects.equals(description, that.description) &&
-            Objects.equals(startDate, that.startDate) &&
-            Objects.equals(endDate, that.endDate) &&
             Objects.equals(status, that.status) &&
-            Objects.equals(owner, that.owner);
+            Objects.equals(owner, that.owner) &&
+            Objects.equals(color, that.color) &&
+            Objects.equals(tasksId, that.tasksId) &&
+            Objects.equals(participantsId, that.participantsId);
     }
 
     @Override
@@ -158,10 +169,11 @@ public class ProjectCriteria implements Serializable, Criteria {
         id,
         name,
         description,
-        startDate,
-        endDate,
         status,
-        owner
+        owner,
+        color,
+        tasksId,
+        participantsId
         );
     }
 
@@ -171,10 +183,11 @@ public class ProjectCriteria implements Serializable, Criteria {
                 (id != null ? "id=" + id + ", " : "") +
                 (name != null ? "name=" + name + ", " : "") +
                 (description != null ? "description=" + description + ", " : "") +
-                (startDate != null ? "startDate=" + startDate + ", " : "") +
-                (endDate != null ? "endDate=" + endDate + ", " : "") +
                 (status != null ? "status=" + status + ", " : "") +
                 (owner != null ? "owner=" + owner + ", " : "") +
+                (color != null ? "color=" + color + ", " : "") +
+                (tasksId != null ? "tasksId=" + tasksId + ", " : "") +
+                (participantsId != null ? "participantsId=" + participantsId + ", " : "") +
             "}";
     }
 

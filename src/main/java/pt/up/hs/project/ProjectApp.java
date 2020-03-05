@@ -1,5 +1,6 @@
 package pt.up.hs.project;
 
+import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import pt.up.hs.project.client.OAuth2InterceptedFeignConfiguration;
 import pt.up.hs.project.config.ApplicationProperties;
 
@@ -30,6 +31,7 @@ import java.util.Collection;
 @SpringBootApplication
 @EnableConfigurationProperties({LiquibaseProperties.class, ApplicationProperties.class})
 @EnableDiscoveryClient
+@EnableBatchProcessing
 public class ProjectApp {
 
     private static final Logger log = LoggerFactory.getLogger(ProjectApp.class);
