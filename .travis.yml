@@ -1,51 +1,53 @@
 os:
-  - linux
+- linux
 services:
-  - docker
+- docker
 language: node_js
 node_js:
-  - "12.14.0"
+- 12.14.0
 cache:
   directories:
-    - node
-    - node_modules
-    - $HOME/.gradle
+  - node
+  - node_modules
+  - "$HOME/.gradle"
 env:
   global:
-    - NODE_VERSION=12.14.0
-    - SPRING_OUTPUT_ANSI_ENABLED=ALWAYS
-    - SPRING_JPA_SHOW_SQL=false
-    - JHI_DISABLE_WEBPACK_LOGS=true
-    - NG_CLI_ANALYTICS="false"
+  - NODE_VERSION=12.14.0
+  - SPRING_OUTPUT_ANSI_ENABLED=ALWAYS
+  - SPRING_JPA_SHOW_SQL=false
+  - JHI_DISABLE_WEBPACK_LOGS=true
+  - NG_CLI_ANALYTICS="false"
+  - secure: BPO2emshrXFkFZwbdycRfrj4A7ElHY/TZt2JQb2v9hj9sEKlLJTHmsPQ977nO6+GZzQmF5PWNez+E+Kb3QSkBSJUOZn8JU6DlZikDava+onf8hmw8cwG3TIM8wplygV3VSi7xEMpwL2IlbKCuph82d5gghaFqhgLky3VT5SE84Dm+hY2uVszHeiHjjVH8uCtpoB1ALxnDdoEJbNJb9e2hvT4O5FTbeTvtuJdusiueksVpoxVaiC5Yad1Yi0ARwQw05hfQ8eLg4Kjpg7O+ws4ReMS/Te+T54/jHRfNNIOITHOk9ufSuDmb1PavAFuv0i9cICdTHYfAZpD70Ct0rodvJ0VOlrBweGqL1bxfRJuPO81dBIdvJBzE8id1Z97HbrDyapB/YuUlKMby0hHif1dKn/MPjClWoFLWIhlB3wocGWuoN4JIqpcgJsF1uVJpFN0+okIRJHcm0ow+qSTARbYShquhgMb4HQ1+MzNBxywOtwtXmT+jvSqRhk11oRDC09pozn67Kf/ZQadpeYwr433YnS2qG0zs3WHRCCHgv5jnSAV9yL438xxI5FnKtC2z5m6xcTvfV1ktD+Ej/fe2UIGuq08l1Yr9oUA772pophp8AMtxEpHl42knn8zEzxwJq0u0q0JGEzTXKOw6X1wJ1K+MiWXVDtAGWZWY9PK4SnmFbE=
 before_install:
-  - |
-    if [[ $JHI_JDK = '8' ]]; then
-      echo '*** Using OpenJDK 8'
-    else
-      echo '*** Using OpenJDK 11 by default'
-      sudo add-apt-repository ppa:openjdk-r/ppa -y
-      sudo apt-get update -q
-      sudo apt-get install -y openjdk-11-jdk -y
-      sudo update-java-alternatives -s java-1.11.0-openjdk-amd64
-      java -version
-    fi
-  - java -version
-  - sudo /etc/init.d/mysql stop
-  - sudo /etc/init.d/postgresql stop
-  - nvm install $NODE_VERSION
-  - npm install -g npm
-  - node -v
-  - npm -v
+- |
+  if [[ $JHI_JDK = '8' ]]; then
+    echo '*** Using OpenJDK 8'
+  else
+    echo '*** Using OpenJDK 11 by default'
+    sudo add-apt-repository ppa:openjdk-r/ppa -y
+    sudo apt-get update -q
+    sudo apt-get install -y openjdk-11-jdk -y
+    sudo update-java-alternatives -s java-1.11.0-openjdk-amd64
+    java -version
+  fi
+- java -version
+- sudo /etc/init.d/mysql stop
+- sudo /etc/init.d/postgresql stop
+- nvm install $NODE_VERSION
+- npm install -g npm
+- node -v
+- npm -v
 install:
-  - npm install
+- npm install
 script:
-  - chmod +x gradlew
-  - ./gradlew checkstyleNohttp
-  - ./gradlew clean test integrationTest
-  - if [ $TRAVIS_PULL_REQUEST == "false" ]; then ./gradlew sonarqube --no-daemon -Dsonar.organization=handspy -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN; fi
-  - ./gradlew bootJar -Pprod -x test
+- chmod +x gradlew
+- "./gradlew checkstyleNohttp"
+- "./gradlew clean test integrationTest"
+- if [ $TRAVIS_PULL_REQUEST == "false" ]; then ./gradlew sonarqube --no-daemon -Dsonar.organization=handspy
+  -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN; fi
+- "./gradlew bootJar -Pprod -x test"
 notifications:
   webhooks:
-    on_success: change  # options: [always|never|change] default: always
-    on_failure: always  # options: [always|never|change] default: always
-    on_start: false     # default: false
+    on_success: change
+    on_failure: always
+    on_start: never
