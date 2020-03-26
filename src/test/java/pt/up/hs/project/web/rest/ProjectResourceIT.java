@@ -1,5 +1,7 @@
 package pt.up.hs.project.web.rest;
 
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
 import pt.up.hs.project.ProjectApp;
 import pt.up.hs.project.config.SecurityBeanOverrideConfiguration;
 import pt.up.hs.project.domain.Project;
@@ -10,7 +12,6 @@ import pt.up.hs.project.service.ProjectService;
 import pt.up.hs.project.service.dto.ProjectDTO;
 import pt.up.hs.project.service.mapper.ProjectMapper;
 import pt.up.hs.project.web.rest.errors.ExceptionTranslator;
-import pt.up.hs.project.service.dto.ProjectCriteria;
 import pt.up.hs.project.service.ProjectQueryService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +31,7 @@ import javax.persistence.EntityManager;
 import java.time.Instant;
 import java.util.List;
 
+import static pt.up.hs.project.web.rest.ProjectResourceIT.TEST_USER_LOGIN;
 import static pt.up.hs.project.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -37,11 +39,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import pt.up.hs.project.domain.enumeration.ProjectStatus;
+
 /**
  * Integration tests for the {@link ProjectResource} REST controller.
  */
+@AutoConfigureMockMvc
+@WithMockUser(value = TEST_USER_LOGIN)
 @SpringBootTest(classes = {SecurityBeanOverrideConfiguration.class, ProjectApp.class})
 public class ProjectResourceIT {
+    static final String TEST_USER_LOGIN = "test";
 
     private static final String DEFAULT_NAME = "AAAAAAAAAA";
     private static final String UPDATED_NAME = "BBBBBBBBBB";
@@ -52,14 +58,13 @@ public class ProjectResourceIT {
     private static final ProjectStatus DEFAULT_STATUS = ProjectStatus.DRAFT;
     private static final ProjectStatus UPDATED_STATUS = ProjectStatus.OPEN;
 
-    private static final Long DEFAULT_OWNER = 1L;
-    private static final Long UPDATED_OWNER = 2L;
-    private static final Long SMALLER_OWNER = 1L - 1L;
+    private static final String DEFAULT_OWNER = TEST_USER_LOGIN;
+    private static final String UPDATED_OWNER = "user";
 
     private static final String DEFAULT_COLOR = "AAAAAAAAAA";
     private static final String UPDATED_COLOR = "BBBBBBBBBB";
 
-    private static final String DEFAULT_USERNAME = "system";
+    private static final String DEFAULT_USERNAME = TEST_USER_LOGIN;
 
     @Autowired
     private ProjectRepository projectRepository;
@@ -104,7 +109,8 @@ public class ProjectResourceIT {
             .setControllerAdvice(exceptionTranslator)
             .setConversionService(createFormattingConversionService())
             .setMessageConverters(jacksonMessageConverter)
-            .setValidator(validator).build();
+            .setValidator(validator)
+            .build();
     }
 
     /**
@@ -173,6 +179,39 @@ public class ProjectResourceIT {
 
     @Test
     @Transactional
+    public void createProjectWithoutOwner() throws Exception {
+        int databaseSizeBeforeCreate = projectRepository.findAll().size();
+
+        // date before create
+        Instant beforeInstant = Instant.now();
+
+        // Create the Project
+        ProjectDTO projectDTO = projectMapper.toDto(project);
+        projectDTO.setOwner(null);
+        restProjectMockMvc.perform(post("/api/projects")
+            .with(request -> {
+                request.setRemoteUser(TEST_USER_LOGIN);
+                return request;
+            })
+            .contentType(TestUtil.APPLICATION_JSON)
+            .content(TestUtil.convertObjectToJsonBytes(projectDTO)))
+            .andExpect(status().isCreated());
+
+        // Validate the Project in the database
+        List<Project> projectList = projectRepository.findAll();
+        assertThat(projectList).hasSize(databaseSizeBeforeCreate + 1);
+        Project testProject = projectList.get(projectList.size() - 1);
+        assertThat(testProject.getName()).isEqualTo(DEFAULT_NAME);
+        assertThat(testProject.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
+        assertThat(testProject.getStatus()).isEqualTo(DEFAULT_STATUS);
+        assertThat(testProject.getOwner()).isEqualTo(DEFAULT_OWNER);
+        assertThat(testProject.getColor()).isEqualTo(DEFAULT_COLOR);
+        assertThat(testProject.getCreatedBy()).isEqualTo(TEST_USER_LOGIN);
+        assertThat(testProject.getCreatedDate()).isStrictlyBetween(beforeInstant, Instant.now());
+    }
+
+    @Test
+    @Transactional
     public void createProjectWithExistingId() throws Exception {
         int databaseSizeBeforeCreate = projectRepository.findAll().size();
 
@@ -232,25 +271,6 @@ public class ProjectResourceIT {
 
     @Test
     @Transactional
-    public void checkOwnerIsRequired() throws Exception {
-        int databaseSizeBeforeTest = projectRepository.findAll().size();
-        // set the field null
-        project.setOwner(null);
-
-        // Create the Project, which fails.
-        ProjectDTO projectDTO = projectMapper.toDto(project);
-
-        restProjectMockMvc.perform(post("/api/projects")
-            .contentType(TestUtil.APPLICATION_JSON)
-            .content(TestUtil.convertObjectToJsonBytes(projectDTO)))
-            .andExpect(status().isBadRequest());
-
-        List<Project> projectList = projectRepository.findAll();
-        assertThat(projectList).hasSize(databaseSizeBeforeTest);
-    }
-
-    @Test
-    @Transactional
     public void checkColorIsRequired() throws Exception {
         int databaseSizeBeforeTest = projectRepository.findAll().size();
         // set the field null
@@ -282,7 +302,7 @@ public class ProjectResourceIT {
             .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
             .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION)))
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())))
-            .andExpect(jsonPath("$.[*].owner").value(hasItem(DEFAULT_OWNER.intValue())))
+            .andExpect(jsonPath("$.[*].owner").value(hasItem(DEFAULT_OWNER)))
             .andExpect(jsonPath("$.[*].color").value(hasItem(DEFAULT_COLOR)))
             .andExpect(jsonPath("$.[*].createdBy").value(hasItem(DEFAULT_USERNAME)))
             .andExpect(jsonPath("$.[*].createdDate").exists());
@@ -302,7 +322,7 @@ public class ProjectResourceIT {
             .andExpect(jsonPath("$.name").value(DEFAULT_NAME))
             .andExpect(jsonPath("$.description").value(DEFAULT_DESCRIPTION))
             .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()))
-            .andExpect(jsonPath("$.owner").value(DEFAULT_OWNER.intValue()))
+            .andExpect(jsonPath("$.owner").value(DEFAULT_OWNER))
             .andExpect(jsonPath("$.color").value(DEFAULT_COLOR))
             .andExpect(jsonPath("$.createdBy").value(DEFAULT_USERNAME))
             .andExpect(jsonPath("$.createdDate").exists());
@@ -590,59 +610,6 @@ public class ProjectResourceIT {
 
     @Test
     @Transactional
-    public void getAllProjectsByOwnerIsGreaterThanOrEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where owner is greater than or equal to DEFAULT_OWNER
-        defaultProjectShouldBeFound("owner.greaterThanOrEqual=" + DEFAULT_OWNER);
-
-        // Get all the projectList where owner is greater than or equal to UPDATED_OWNER
-        defaultProjectShouldNotBeFound("owner.greaterThanOrEqual=" + UPDATED_OWNER);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByOwnerIsLessThanOrEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where owner is less than or equal to DEFAULT_OWNER
-        defaultProjectShouldBeFound("owner.lessThanOrEqual=" + DEFAULT_OWNER);
-
-        // Get all the projectList where owner is less than or equal to SMALLER_OWNER
-        defaultProjectShouldNotBeFound("owner.lessThanOrEqual=" + SMALLER_OWNER);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByOwnerIsLessThanSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where owner is less than DEFAULT_OWNER
-        defaultProjectShouldNotBeFound("owner.lessThan=" + DEFAULT_OWNER);
-
-        // Get all the projectList where owner is less than UPDATED_OWNER
-        defaultProjectShouldBeFound("owner.lessThan=" + UPDATED_OWNER);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByOwnerIsGreaterThanSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where owner is greater than DEFAULT_OWNER
-        defaultProjectShouldNotBeFound("owner.greaterThan=" + DEFAULT_OWNER);
-
-        // Get all the projectList where owner is greater than SMALLER_OWNER
-        defaultProjectShouldBeFound("owner.greaterThan=" + SMALLER_OWNER);
-    }
-
-
-    @Test
-    @Transactional
     public void getAllProjectsByColorIsEqualToSomething() throws Exception {
         // Initialize the database
         projectRepository.saveAndFlush(project);
@@ -769,7 +736,7 @@ public class ProjectResourceIT {
             .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
             .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION)))
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())))
-            .andExpect(jsonPath("$.[*].owner").value(hasItem(DEFAULT_OWNER.intValue())))
+            .andExpect(jsonPath("$.[*].owner").value(hasItem(DEFAULT_OWNER)))
             .andExpect(jsonPath("$.[*].color").value(hasItem(DEFAULT_COLOR)))
             .andExpect(jsonPath("$.[*].createdBy").value(hasItem(DEFAULT_USERNAME)))
             .andExpect(jsonPath("$.[*].createdDate").exists());

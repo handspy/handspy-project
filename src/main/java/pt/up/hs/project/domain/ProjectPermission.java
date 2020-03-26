@@ -10,7 +10,9 @@ import javax.validation.constraints.*;
 import java.io.Serializable;
 
 /**
- * Permissions of a user towards a project.\n\n@author José Carlos Paiva
+ * Permissions of a user towards a project.
+ *
+ * @author José Carlos Paiva
  */
 @Entity
 @Table(name = "project_permission")
@@ -28,8 +30,8 @@ public class ProjectPermission implements Serializable {
      * User to which this permission is assigned.
      */
     @NotNull
-    @Column(name = "hs_user", nullable = false)
-    private Long user;
+    @Column(name = "user", nullable = false)
+    private String user;
 
     /**
      * The permission of this entry.
@@ -54,16 +56,16 @@ public class ProjectPermission implements Serializable {
         this.id = id;
     }
 
-    public Long getUser() {
+    public String getUser() {
         return user;
     }
 
-    public ProjectPermission user(Long user) {
+    public ProjectPermission user(String user) {
         this.user = user;
         return this;
     }
 
-    public void setUser(Long user) {
+    public void setUser(String user) {
         this.user = user;
     }
 

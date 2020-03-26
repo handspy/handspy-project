@@ -6,7 +6,7 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd
                         http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
-    
+
     <!--
         Added the entity ProjectPermission.
     -->
@@ -15,14 +15,14 @@
             <column name="id" type="bigint">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="hs_user" type="bigint" remarks="User to which this permission is assigned.">
+            <column name="user" type="varchar(50)" remarks="User to which this permission is assigned.">
+                <constraints nullable="false" />
+            </column>
+            <column name="project_id" type="bigint">
                 <constraints nullable="false" />
             </column>
             <column name="permission" type="integer" remarks="The permission of this entry.">
                 <constraints nullable="true" />
-            </column>
-            <column name="project_id" type="bigint">
-                <constraints nullable="false" />
             </column>
             <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here, do not remove-->
         </createTable>

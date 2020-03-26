@@ -54,13 +54,14 @@ public class Project extends AbstractAuditingEntity {
      */
     @NotNull
     @Column(name = "owner", nullable = false)
-    private Long owner;
+    private String owner;
 
     /**
      * Color of the project
      */
     @NotNull
-    @Column(name = "color", nullable = false)
+    @Size(max = 20)
+    @Column(name = "color", nullable = false, length = 20)
     private String color;
 
     @OneToMany(mappedBy = "project")
@@ -119,16 +120,16 @@ public class Project extends AbstractAuditingEntity {
         this.status = status;
     }
 
-    public Long getOwner() {
+    public String getOwner() {
         return owner;
     }
 
-    public Project owner(Long owner) {
+    public Project owner(String owner) {
         this.owner = owner;
         return this;
     }
 
-    public void setOwner(Long owner) {
+    public void setOwner(String owner) {
         this.owner = owner;
     }
 

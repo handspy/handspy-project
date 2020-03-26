@@ -48,7 +48,7 @@ public class ProjectCriteria implements Serializable, Criteria {
 
     private ProjectStatusFilter status;
 
-    private LongFilter owner;
+    private StringFilter owner;
 
     private StringFilter color;
 
@@ -107,11 +107,11 @@ public class ProjectCriteria implements Serializable, Criteria {
         this.status = status;
     }
 
-    public LongFilter getOwner() {
+    public StringFilter getOwner() {
         return owner;
     }
 
-    public void setOwner(LongFilter owner) {
+    public void setOwner(StringFilter owner) {
         this.owner = owner;
     }
 

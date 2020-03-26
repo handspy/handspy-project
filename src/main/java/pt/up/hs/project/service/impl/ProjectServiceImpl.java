@@ -1,5 +1,6 @@
 package pt.up.hs.project.service.impl;
 
+import pt.up.hs.project.security.SecurityUtils;
 import pt.up.hs.project.service.ProjectService;
 import pt.up.hs.project.domain.Project;
 import pt.up.hs.project.repository.ProjectRepository;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.up.hs.project.web.rest.errors.BadRequestAlertException;
 
 import java.util.Optional;
 

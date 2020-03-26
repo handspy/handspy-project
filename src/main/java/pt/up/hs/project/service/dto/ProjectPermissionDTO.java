@@ -19,20 +19,19 @@ public class ProjectPermissionDTO implements Serializable {
      */
     @NotNull
     @ApiModelProperty(value = "User to which this permission is assigned.", required = true)
-    private Long user;
+    private String user;
+
+    /**
+     * A permission (project) refers to a project.
+     */
+    @ApiModelProperty(value = "A permission (project) refers to a project.")
+    private Long projectId;
 
     /**
      * The permission of this entry.
      */
     @ApiModelProperty(value = "The permission of this entry.")
     private Integer permission;
-
-    /**
-     * A permission (project) refers to a project.
-     */
-    @ApiModelProperty(value = "A permission (project) refers to a project.")
-
-    private Long projectId;
 
     public Long getId() {
         return id;
@@ -42,11 +41,11 @@ public class ProjectPermissionDTO implements Serializable {
         this.id = id;
     }
 
-    public Long getUser() {
+    public String getUser() {
         return user;
     }
 
-    public void setUser(Long user) {
+    public void setUser(String user) {
         this.user = user;
     }
 

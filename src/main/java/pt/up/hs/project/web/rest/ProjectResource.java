@@ -1,5 +1,6 @@
 package pt.up.hs.project.web.rest;
 
+import pt.up.hs.project.security.SecurityUtils;
 import pt.up.hs.project.service.ProjectService;
 import pt.up.hs.project.web.rest.errors.BadRequestAlertException;
 import pt.up.hs.project.service.dto.ProjectDTO;
@@ -60,6 +61,13 @@ public class ProjectResource {
         log.debug("REST request to save Project : {}", projectDTO);
         if (projectDTO.getId() != null) {
             throw new BadRequestAlertException("A new project cannot already have an ID", ENTITY_NAME, "idexists");
+        }
+        if (projectDTO.getOwner() == null) {
+            Optional<String> login = SecurityUtils.getCurrentUserLogin();
+            if (!login.isPresent()) {
+                throw new BadRequestAlertException("Owner not provided", ENTITY_NAME, "ownermissing");
+            }
+            projectDTO.setOwner(login.get());
         }
         ProjectDTO result = projectService.save(projectDTO);
         return ResponseEntity.created(new URI("/api/projects/" + result.getId()))

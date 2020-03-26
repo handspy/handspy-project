@@ -92,7 +92,7 @@ public class ProjectPermissionQueryService extends QueryService<ProjectPermissio
                 specification = specification.and(buildRangeSpecification(criteria.getId(), ProjectPermission_.id));
             }
             if (criteria.getUser() != null) {
-                specification = specification.and(buildRangeSpecification(criteria.getUser(), ProjectPermission_.user));
+                specification = specification.and(buildStringSpecification(criteria.getUser(), ProjectPermission_.user));
             }
             if (criteria.getPermission() != null) {
                 specification = specification.and(buildRangeSpecification(criteria.getPermission(), ProjectPermission_.permission));

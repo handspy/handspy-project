@@ -101,7 +101,7 @@ public class ProjectQueryService extends QueryService<Project> {
                 specification = specification.and(buildSpecification(criteria.getStatus(), Project_.status));
             }
             if (criteria.getOwner() != null) {
-                specification = specification.and(buildRangeSpecification(criteria.getOwner(), Project_.owner));
+                specification = specification.and(buildStringSpecification(criteria.getOwner(), Project_.owner));
             }
             if (criteria.getColor() != null) {
                 specification = specification.and(buildStringSpecification(criteria.getColor(), Project_.color));

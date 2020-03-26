@@ -24,7 +24,7 @@
             <column name="status" type="varchar(255)" remarks="Status of the project">
                 <constraints nullable="false" />
             </column>
-            <column name="owner" type="bigint" remarks="Owner of the project">
+            <column name="owner" type="varchar(50)" remarks="Owner of the project">
                 <constraints nullable="false" />
             </column>
             <column name="color" type="varchar(255)">

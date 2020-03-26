@@ -4,6 +4,7 @@ import io.github.jhipster.service.Criteria;
 import io.github.jhipster.service.filter.Filter;
 import io.github.jhipster.service.filter.IntegerFilter;
 import io.github.jhipster.service.filter.LongFilter;
+import io.github.jhipster.service.filter.StringFilter;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -23,7 +24,7 @@ public class ProjectPermissionCriteria implements Serializable, Criteria {
 
     private LongFilter id;
 
-    private LongFilter user;
+    private StringFilter user;
 
     private IntegerFilter permission;
 
@@ -52,11 +53,11 @@ public class ProjectPermissionCriteria implements Serializable, Criteria {
         this.id = id;
     }
 
-    public LongFilter getUser() {
+    public StringFilter getUser() {
         return user;
     }
 
-    public void setUser(LongFilter user) {
+    public void setUser(StringFilter user) {
         this.user = user;
     }
 

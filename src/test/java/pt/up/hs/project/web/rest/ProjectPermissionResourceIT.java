@@ -40,9 +40,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = {SecurityBeanOverrideConfiguration.class, ProjectApp.class})
 public class ProjectPermissionResourceIT {
 
-    private static final Long DEFAULT_USER = 1L;
-    private static final Long UPDATED_USER = 2L;
-    private static final Long SMALLER_USER = 1L - 1L;
+    private static final String DEFAULT_USER = "system";
+    private static final String UPDATED_USER = "user";
 
     private static final Integer DEFAULT_PERMISSION = 1;
     private static final Integer UPDATED_PERMISSION = 2;
@@ -212,10 +211,10 @@ public class ProjectPermissionResourceIT {
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(projectPermission.getId().intValue())))
-            .andExpect(jsonPath("$.[*].user").value(hasItem(DEFAULT_USER.intValue())))
+            .andExpect(jsonPath("$.[*].user").value(hasItem(DEFAULT_USER)))
             .andExpect(jsonPath("$.[*].permission").value(hasItem(DEFAULT_PERMISSION)));
     }
-    
+
     @Test
     @Transactional
     public void getProjectPermission() throws Exception {
@@ -227,7 +226,7 @@ public class ProjectPermissionResourceIT {
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.id").value(projectPermission.getId().intValue()))
-            .andExpect(jsonPath("$.user").value(DEFAULT_USER.intValue()))
+            .andExpect(jsonPath("$.user").value(DEFAULT_USER))
             .andExpect(jsonPath("$.permission").value(DEFAULT_PERMISSION));
     }
 
@@ -302,59 +301,6 @@ public class ProjectPermissionResourceIT {
         // Get all the projectPermissionList where user is null
         defaultProjectPermissionShouldNotBeFound("user.specified=false");
     }
-
-    @Test
-    @Transactional
-    public void getAllProjectPermissionsByUserIsGreaterThanOrEqualToSomething() throws Exception {
-        // Initialize the database
-        projectPermissionRepository.saveAndFlush(projectPermission);
-
-        // Get all the projectPermissionList where user is greater than or equal to DEFAULT_USER
-        defaultProjectPermissionShouldBeFound("user.greaterThanOrEqual=" + DEFAULT_USER);
-
-        // Get all the projectPermissionList where user is greater than or equal to UPDATED_USER
-        defaultProjectPermissionShouldNotBeFound("user.greaterThanOrEqual=" + UPDATED_USER);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectPermissionsByUserIsLessThanOrEqualToSomething() throws Exception {
-        // Initialize the database
-        projectPermissionRepository.saveAndFlush(projectPermission);
-
-        // Get all the projectPermissionList where user is less than or equal to DEFAULT_USER
-        defaultProjectPermissionShouldBeFound("user.lessThanOrEqual=" + DEFAULT_USER);
-
-        // Get all the projectPermissionList where user is less than or equal to SMALLER_USER
-        defaultProjectPermissionShouldNotBeFound("user.lessThanOrEqual=" + SMALLER_USER);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectPermissionsByUserIsLessThanSomething() throws Exception {
-        // Initialize the database
-        projectPermissionRepository.saveAndFlush(projectPermission);
-
-        // Get all the projectPermissionList where user is less than DEFAULT_USER
-        defaultProjectPermissionShouldNotBeFound("user.lessThan=" + DEFAULT_USER);
-
-        // Get all the projectPermissionList where user is less than UPDATED_USER
-        defaultProjectPermissionShouldBeFound("user.lessThan=" + UPDATED_USER);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectPermissionsByUserIsGreaterThanSomething() throws Exception {
-        // Initialize the database
-        projectPermissionRepository.saveAndFlush(projectPermission);
-
-        // Get all the projectPermissionList where user is greater than DEFAULT_USER
-        defaultProjectPermissionShouldNotBeFound("user.greaterThan=" + DEFAULT_USER);
-
-        // Get all the projectPermissionList where user is greater than SMALLER_USER
-        defaultProjectPermissionShouldBeFound("user.greaterThan=" + SMALLER_USER);
-    }
-
 
     @Test
     @Transactional
@@ -484,7 +430,7 @@ public class ProjectPermissionResourceIT {
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(projectPermission.getId().intValue())))
-            .andExpect(jsonPath("$.[*].user").value(hasItem(DEFAULT_USER.intValue())))
+            .andExpect(jsonPath("$.[*].user").value(hasItem(DEFAULT_USER)))
             .andExpect(jsonPath("$.[*].permission").value(hasItem(DEFAULT_PERMISSION)));
 
         // Check, that the count call also returns 1

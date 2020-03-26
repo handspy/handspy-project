@@ -38,14 +38,18 @@ public class ProjectDTO extends AbstractAuditingDTO {
     private ProjectStatus status;
 
     /**
-     * Owner of the project
+     * Color of the project
      */
     @NotNull
-    @ApiModelProperty(value = "Owner of the project", required = true)
-    private Long owner;
-
-    @NotNull
+    @Size(max = 20)
+    @ApiModelProperty(value = "Color of the project")
     private String color;
+
+    /**
+     * Owner of the project
+     */
+    @ApiModelProperty(value = "Owner of the project", required = true)
+    private String owner;
 
 
     public Long getId() {
@@ -80,20 +84,20 @@ public class ProjectDTO extends AbstractAuditingDTO {
         this.status = status;
     }
 
-    public Long getOwner() {
-        return owner;
-    }
-
-    public void setOwner(Long owner) {
-        this.owner = owner;
-    }
-
     public String getColor() {
         return color;
     }
 
     public void setColor(String color) {
         this.color = color;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 
     @Override
