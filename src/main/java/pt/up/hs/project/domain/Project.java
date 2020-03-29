@@ -64,6 +64,10 @@ public class Project extends AbstractAuditingEntity {
     @Column(name = "color", nullable = false, length = 20)
     private String color;
 
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    private Set<ProjectPermission> permissions = new HashSet<>();
+
     @OneToMany(mappedBy = "project")
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     private Set<Task> tasks = new HashSet<>();
@@ -195,6 +199,32 @@ public class Project extends AbstractAuditingEntity {
     public void setParticipants(Set<Participant> participants) {
         this.participants = participants;
     }
+
+    public Set<ProjectPermission> getPermissions() {
+        return permissions;
+    }
+
+    public Project permissions(Set<ProjectPermission> permissions) {
+        this.permissions = permissions;
+        return this;
+    }
+
+    public Project addPermissions(ProjectPermission permission) {
+        this.permissions.add(permission);
+        permission.setProjectId(this.id);
+        return this;
+    }
+
+    public Project removePermissions(ProjectPermission permission) {
+        this.permissions.remove(permission);
+        permission.setProjectId(null);
+        return this;
+    }
+
+    public void setPermissions(Set<ProjectPermission> permissions) {
+        this.permissions = permissions;
+    }
+
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here, do not remove
 
     @Override

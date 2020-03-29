@@ -2,17 +2,20 @@ package pt.up.hs.project.service.dto;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import javax.validation.constraints.*;
+
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 
 /**
- * A DTO for the {@link pt.up.hs.project.domain.ProjectPermission} entity.
+ * A DTO for bulk adding {@link pt.up.hs.project.domain.ProjectPermission}
+ * entities of the same user and project.
  *
  * @author José Carlos Paiva
  */
-@ApiModel(description = "Permission of a user towards a project.")
-public class ProjectPermissionDTO implements Serializable {
+@ApiModel(description = "Permissions of a user towards a project.")
+public class BulkProjectPermissionDTO implements Serializable {
 
     /**
      * User to which this permission is assigned.
@@ -31,8 +34,17 @@ public class ProjectPermissionDTO implements Serializable {
     /**
      * The permission of this entry.
      */
-    @ApiModelProperty(value = "A permission of this user in this project.")
-    private String permissionName;
+    @ApiModelProperty(value = "The permissions of this user in this project.")
+    private List<String> permissions;
+
+    public BulkProjectPermissionDTO() {
+    }
+
+    public BulkProjectPermissionDTO(@NotNull String user, @NotNull Long projectId, List<String> permissions) {
+        this.user = user;
+        this.projectId = projectId;
+        this.permissions = permissions;
+    }
 
     public String getUser() {
         return user;
@@ -42,12 +54,12 @@ public class ProjectPermissionDTO implements Serializable {
         this.user = user;
     }
 
-    public String getPermissionName() {
-        return permissionName;
+    public List<String> getPermissions() {
+        return permissions;
     }
 
-    public void setPermissionName(String permissionName) {
-        this.permissionName = permissionName;
+    public void setPermissions(List<String> permissions) {
+        this.permissions = permissions;
     }
 
     public Long getProjectId() {
@@ -62,15 +74,14 @@ public class ProjectPermissionDTO implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ProjectPermissionDTO that = (ProjectPermissionDTO) o;
+        BulkProjectPermissionDTO that = (BulkProjectPermissionDTO) o;
         return Objects.equals(user, that.user) &&
-            Objects.equals(projectId, that.projectId) &&
-            Objects.equals(permissionName, that.permissionName);
+            Objects.equals(projectId, that.projectId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(user, projectId, permissionName);
+        return Objects.hash(user, projectId);
     }
 
     @Override
@@ -78,7 +89,7 @@ public class ProjectPermissionDTO implements Serializable {
         return "ProjectPermissionDTO{" +
             ", user=" + getUser() +
             ", projectId=" + getProjectId() +
-            ", permissionName=" + getPermissionName() +
+            ", permissions=" + getPermissions() +
             "}";
     }
 }

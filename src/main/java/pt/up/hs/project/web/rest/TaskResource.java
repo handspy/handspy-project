@@ -1,14 +1,5 @@
 package pt.up.hs.project.web.rest;
 
-import org.springframework.web.multipart.MultipartFile;
-import pt.up.hs.project.service.TaskService;
-import pt.up.hs.project.service.dto.BulkImportResultDTO;
-import pt.up.hs.project.service.dto.ParticipantDTO;
-import pt.up.hs.project.web.rest.errors.BadRequestAlertException;
-import pt.up.hs.project.service.dto.TaskDTO;
-import pt.up.hs.project.service.dto.TaskCriteria;
-import pt.up.hs.project.service.TaskQueryService;
-
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.PaginationUtil;
 import io.github.jhipster.web.util.ResponseUtil;
@@ -18,9 +9,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import pt.up.hs.project.service.TaskService;
+import pt.up.hs.project.service.dto.BulkImportResultDTO;
+import pt.up.hs.project.service.dto.TaskDTO;
+import pt.up.hs.project.web.rest.errors.BadRequestAlertException;
 
 import javax.validation.Valid;
 import java.io.IOException;
@@ -45,11 +42,9 @@ public class TaskResource {
     private String applicationName;
 
     private final TaskService taskService;
-    private final TaskQueryService taskQueryService;
 
-    public TaskResource(TaskService taskService, TaskQueryService taskQueryService) {
+    public TaskResource(TaskService taskService) {
         this.taskService = taskService;
-        this.taskQueryService = taskQueryService;
     }
 
     /**
@@ -61,6 +56,7 @@ public class TaskResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/tasks")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
     public ResponseEntity<TaskDTO> createTask(
         @PathVariable("projectId") Long projectId,
         @Valid @RequestBody TaskDTO taskDTO
@@ -85,6 +81,7 @@ public class TaskResource {
      * or with status {@code 500 (Internal Server Error)} if the taskDTO couldn't be updated.
      */
     @PutMapping("/tasks")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
     public ResponseEntity<TaskDTO> updateTask(
         @PathVariable("projectId") Long projectId,
         @Valid @RequestBody TaskDTO taskDTO
@@ -103,17 +100,21 @@ public class TaskResource {
      * {@code GET  /tasks} : get all the tasks.
      *
      * @param projectId ID of the project to which the tasks belong.
+     * @param search    the search string.
+     * @param labels    the ids of the labels to filter by.
      * @param pageable  the pagination information.
-     * @param criteria  the criteria which the requested entities should match.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of tasks in body.
      */
     @GetMapping("/tasks")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<List<TaskDTO>> getAllTasks(
         @PathVariable("projectId") Long projectId,
-        TaskCriteria criteria, Pageable pageable
+        @RequestParam(value = "search", required = false) String search,
+        @RequestParam(value = "labels", required = false) Long[] labels,
+        Pageable pageable
     ) {
-        log.debug("REST request to get Tasks by criteria {} in project {}", criteria, projectId);
-        Page<TaskDTO> page = taskQueryService.findByCriteria(projectId, criteria, pageable);
+        log.debug("REST request to get Tasks in project {}", projectId);
+        Page<TaskDTO> page = taskService.findAll(projectId, search, labels, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
@@ -122,16 +123,19 @@ public class TaskResource {
      * {@code GET  /tasks/count} : count all the tasks.
      *
      * @param projectId ID of the project to which the tasks belong.
-     * @param criteria  the criteria which the requested entities should match.
+     * @param search    the search string.
+     * @param labels    the ids of the labels to filter by.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the count in body.
      */
     @GetMapping("/tasks/count")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<Long> countTasks(
         @PathVariable("projectId") Long projectId,
-        TaskCriteria criteria
+        @RequestParam(value = "search", required = false) String search,
+        @RequestParam(value = "labels", required = false) Long[] labels
     ) {
-        log.debug("REST request to count Tasks by criteria {} in project {}", criteria, projectId);
-        return ResponseEntity.ok().body(taskQueryService.countByCriteria(projectId, criteria));
+        log.debug("REST request to count Tasks in project {}", projectId);
+        return ResponseEntity.ok().body(taskService.count(projectId, search, labels));
     }
 
     /**
@@ -143,6 +147,7 @@ public class TaskResource {
      * or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/tasks/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<TaskDTO> getTask(
         @PathVariable("projectId") Long projectId,
         @PathVariable Long id
@@ -164,6 +169,7 @@ public class TaskResource {
      * body the {@link BulkImportResultDTO}.
      */
     @PostMapping(value = "/tasks/import", consumes = "text/csv")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
     public ResponseEntity<BulkImportResultDTO<TaskDTO>> importSimple(
         @PathVariable("projectId") Long projectId,
         @RequestParam(value = "sep", defaultValue = ",") String sep,
@@ -187,6 +193,7 @@ public class TaskResource {
      * body the {@link BulkImportResultDTO}.
      */
     @PostMapping(value = "/tasks/import", consumes = "multipart/form-data")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
     public ResponseEntity<BulkImportResultDTO<TaskDTO>> importMultipart(
         @PathVariable("projectId") Long projectId,
         @RequestParam(value = "sep", defaultValue = ",") String sep,
@@ -208,6 +215,7 @@ public class TaskResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/tasks/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'MANAGE')")
     public ResponseEntity<Void> deleteTask(
         @PathVariable("projectId") Long projectId,
         @PathVariable Long id

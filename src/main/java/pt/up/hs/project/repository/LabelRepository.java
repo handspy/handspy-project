@@ -1,7 +1,5 @@
 package pt.up.hs.project.repository;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import pt.up.hs.project.domain.Label;
 
 import org.springframework.data.jpa.repository.*;
@@ -9,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -16,11 +15,13 @@ import java.util.Optional;
  */
 @SuppressWarnings("unused")
 @Repository
-public interface LabelRepository extends JpaRepository<Label, Long>, JpaSpecificationExecutor<Label> {
+public interface LabelRepository extends JpaRepository<Label, Long> {
 
     Optional<Label> findByProjectIdAndName(@NotNull Long projectId, @NotNull @Size(max = 50) String name);
 
-    Page<Label> findAllByProjectId(@NotNull Long projectId, Pageable pageable);
+    List<Label> findAllByProjectId(@NotNull Long projectId);
+
+    long countByProjectId(@NotNull Long projectId);
 
     Optional<Label> findByProjectIdAndId(@NotNull Long projectId, @NotNull Long id);
 

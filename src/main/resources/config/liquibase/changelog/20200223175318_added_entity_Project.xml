@@ -62,8 +62,9 @@
             <column name="name" type="string"/>
             <column name="description" type="string"/>
             <column name="status" type="string"/>
-            <column name="owner" type="numeric"/>
+            <column name="owner" type="string"/>
             <column name="color" type="string"/>
+            <column name="created_by" type="string"/>
             <!-- jhipster-needle-liquibase-add-loadcolumn - JHipster (and/or extensions) can add load columns here, do not remove-->
         </loadData>
     </changeSet>

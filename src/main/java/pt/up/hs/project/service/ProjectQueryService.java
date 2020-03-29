@@ -51,7 +51,7 @@ public class ProjectQueryService extends QueryService<Project> {
     public List<ProjectDTO> findByCriteria(ProjectCriteria criteria) {
         log.debug("find by criteria : {}", criteria);
         final Specification<Project> specification = createSpecification(criteria);
-        return projectMapper.toDto(projectRepository.findAll(specification));
+        return null; // projectMapper.toDto(projectRepository.findAll(specification));
     }
 
     /**
@@ -64,8 +64,8 @@ public class ProjectQueryService extends QueryService<Project> {
     public Page<ProjectDTO> findByCriteria(ProjectCriteria criteria, Pageable page) {
         log.debug("find by criteria : {}, page: {}", criteria, page);
         final Specification<Project> specification = createSpecification(criteria);
-        return projectRepository.findAll(specification, page)
-            .map(projectMapper::toDto);
+        return null; /*projectRepository.findAll(specification, page)
+            .map(projectMapper::toDto);*/
     }
 
     /**
@@ -77,7 +77,7 @@ public class ProjectQueryService extends QueryService<Project> {
     public long countByCriteria(ProjectCriteria criteria) {
         log.debug("count by criteria : {}", criteria);
         final Specification<Project> specification = createSpecification(criteria);
-        return projectRepository.count(specification);
+        return 0L; // projectRepository.count(specification);
     }
 
     /**

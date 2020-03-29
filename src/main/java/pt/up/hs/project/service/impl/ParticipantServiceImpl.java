@@ -91,14 +91,16 @@ public class ParticipantServiceImpl implements ParticipantService {
      * Get all the participants.
      *
      * @param projectId the ID of the project containing the participants.
+     * @param search the search string.
+     * @param labelIds the ids of the labels to filter by.
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<ParticipantDTO> findAll(Long projectId, Pageable pageable) {
+    public Page<ParticipantDTO> findAll(Long projectId, String search, Long[] labelIds, Pageable pageable) {
         log.debug("Request to get all Participants from project {}", projectId);
-        return participantRepository.findAllByProjectId(projectId, pageable)
+        return participantRepository.findAllByProjectId(projectId, search, labelIds, pageable)
             .map(participantMapper::toDto);
     }
 
@@ -106,16 +108,33 @@ public class ParticipantServiceImpl implements ParticipantService {
      * Get all the participants with eager load of many-to-many relationships.
      *
      * @param projectId the ID of the project containing the participants.
+     * @param search the search string.
+     * @param labelIds the ids of the labels to filter by.
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<ParticipantDTO> findAllWithEagerRelationships(Long projectId, Pageable pageable) {
+    public Page<ParticipantDTO> findAllWithEagerRelationships(Long projectId, String search, Long[] labelIds, Pageable pageable) {
         log.debug("Request to get all Participants with eager relationships from project {}", projectId);
         return participantRepository
-            .findAllByProjectIdWithEagerRelationships(projectId, pageable)
+            .findAllWithEagerRelationships(projectId, search, labelIds, pageable)
             .map(participantMapper::toDto);
+    }
+
+    /**
+     * Count the participants with eager load of many-to-many relationships.
+     *
+     * @param projectId the ID of the project containing the tasks.
+     * @param search the search string.
+     * @param labelIds the ids of the labels to filter by.
+     * @return the number of entities.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public long count(Long projectId, String search, Long[] labelIds) {
+        log.debug("Request to count Participants from project {}", projectId);
+        return participantRepository.count(projectId, search, labelIds);
     }
 
     /**

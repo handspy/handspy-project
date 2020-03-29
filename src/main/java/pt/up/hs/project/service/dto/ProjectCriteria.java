@@ -151,40 +151,40 @@ public class ProjectCriteria implements Serializable, Criteria {
         final ProjectCriteria that = (ProjectCriteria) o;
         return
             Objects.equals(id, that.id) &&
-            Objects.equals(name, that.name) &&
-            Objects.equals(description, that.description) &&
-            Objects.equals(status, that.status) &&
-            Objects.equals(owner, that.owner) &&
-            Objects.equals(color, that.color) &&
-            Objects.equals(tasksId, that.tasksId) &&
-            Objects.equals(participantsId, that.participantsId);
+                Objects.equals(name, that.name) &&
+                Objects.equals(description, that.description) &&
+                Objects.equals(status, that.status) &&
+                Objects.equals(owner, that.owner) &&
+                Objects.equals(color, that.color) &&
+                Objects.equals(tasksId, that.tasksId) &&
+                Objects.equals(participantsId, that.participantsId);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(
-        id,
-        name,
-        description,
-        status,
-        owner,
-        color,
-        tasksId,
-        participantsId
+            id,
+            name,
+            description,
+            status,
+            owner,
+            color,
+            tasksId,
+            participantsId
         );
     }
 
     @Override
     public String toString() {
         return "ProjectCriteria{" +
-                (id != null ? "id=" + id + ", " : "") +
-                (name != null ? "name=" + name + ", " : "") +
-                (description != null ? "description=" + description + ", " : "") +
-                (status != null ? "status=" + status + ", " : "") +
-                (owner != null ? "owner=" + owner + ", " : "") +
-                (color != null ? "color=" + color + ", " : "") +
-                (tasksId != null ? "tasksId=" + tasksId + ", " : "") +
-                (participantsId != null ? "participantsId=" + participantsId + ", " : "") +
+            (id != null ? "id=" + id + ", " : "") +
+            (name != null ? "name=" + name + ", " : "") +
+            (description != null ? "description=" + description + ", " : "") +
+            (status != null ? "status=" + status + ", " : "") +
+            (owner != null ? "owner=" + owner + ", " : "") +
+            (color != null ? "color=" + color + ", " : "") +
+            (tasksId != null ? "tasksId=" + tasksId + ", " : "") +
+            (participantsId != null ? "participantsId=" + participantsId + ", " : "") +
             "}";
     }
 

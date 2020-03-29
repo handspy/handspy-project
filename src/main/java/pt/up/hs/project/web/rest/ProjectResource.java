@@ -1,11 +1,11 @@
 package pt.up.hs.project.web.rest;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+import pt.up.hs.project.domain.enumeration.ProjectStatus;
 import pt.up.hs.project.security.SecurityUtils;
 import pt.up.hs.project.service.ProjectService;
 import pt.up.hs.project.web.rest.errors.BadRequestAlertException;
 import pt.up.hs.project.service.dto.ProjectDTO;
-import pt.up.hs.project.service.dto.ProjectCriteria;
-import pt.up.hs.project.service.ProjectQueryService;
 
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.PaginationUtil;
@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,11 +41,9 @@ public class ProjectResource {
     private String applicationName;
 
     private final ProjectService projectService;
-    private final ProjectQueryService projectQueryService;
 
-    public ProjectResource(ProjectService projectService, ProjectQueryService projectQueryService) {
+    public ProjectResource(ProjectService projectService) {
         this.projectService = projectService;
-        this.projectQueryService = projectQueryService;
     }
 
     /**
@@ -57,6 +54,7 @@ public class ProjectResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/projects")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN')") // TODO remove user from here
     public ResponseEntity<ProjectDTO> createProject(@Valid @RequestBody ProjectDTO projectDTO) throws URISyntaxException {
         log.debug("REST request to save Project : {}", projectDTO);
         if (projectDTO.getId() != null) {
@@ -85,6 +83,7 @@ public class ProjectResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/projects")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectDTO.id, 'pt.up.hs.project.domain.Project', 'ADMIN')")
     public ResponseEntity<ProjectDTO> updateProject(@Valid @RequestBody ProjectDTO projectDTO) throws URISyntaxException {
         log.debug("REST request to update Project : {}", projectDTO);
         if (projectDTO.getId() == null) {
@@ -99,28 +98,40 @@ public class ProjectResource {
     /**
      * {@code GET  /projects} : get all the projects.
      *
+     * @param search the search string.
+     * @param statuses the statuses to include.
      * @param pageable the pagination information.
-     * @param criteria the criteria which the requested entities should match.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of projects in body.
      */
     @GetMapping("/projects")
-    public ResponseEntity<List<ProjectDTO>> getAllProjects(ProjectCriteria criteria, Pageable pageable) {
-        log.debug("REST request to get Projects by criteria: {}", criteria);
-        Page<ProjectDTO> page = projectQueryService.findByCriteria(criteria, pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN')")
+    public ResponseEntity<List<ProjectDTO>> getAllProjects(
+        @RequestParam(value = "search", required = false) String search,
+        @RequestParam(value = "status", required = false) List<ProjectStatus> statuses,
+        Pageable pageable
+    ) {
+        log.debug("REST request to get projects");
+        Page<ProjectDTO> page = projectService.findAll(search, statuses, pageable);
+        HttpHeaders headers = PaginationUtil
+            .generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
 
     /**
      * {@code GET  /projects/count} : count all the projects.
      *
-     * @param criteria the criteria which the requested entities should match.
+     * @param search the search string.
+     * @param statuses the statuses to include.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the count in body.
      */
     @GetMapping("/projects/count")
-    public ResponseEntity<Long> countProjects(ProjectCriteria criteria) {
-        log.debug("REST request to count Projects by criteria: {}", criteria);
-        return ResponseEntity.ok().body(projectQueryService.countByCriteria(criteria));
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN')")
+    public ResponseEntity<Long> countProjects(
+        @RequestParam(value = "search", required = false) String search,
+        @RequestParam(value = "status", required = false) List<ProjectStatus> statuses
+    ) {
+        log.debug("REST request to count projects");
+        return ResponseEntity.ok().body(projectService.count(search, statuses));
     }
 
     /**
@@ -130,6 +141,7 @@ public class ProjectResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the projectDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/projects/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#id, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<ProjectDTO> getProject(@PathVariable Long id) {
         log.debug("REST request to get Project : {}", id);
         Optional<ProjectDTO> projectDTO = projectService.findOne(id);
@@ -143,9 +155,12 @@ public class ProjectResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/projects/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#id, 'pt.up.hs.project.domain.Project', 'ADMIN')")
     public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
         log.debug("REST request to delete Project : {}", id);
         projectService.delete(id);
-        return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())).build();
+        return ResponseEntity.noContent()
+            .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString()))
+            .build();
     }
 }

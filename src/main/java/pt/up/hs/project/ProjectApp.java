@@ -1,6 +1,7 @@
 package pt.up.hs.project;
 
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import pt.up.hs.project.client.OAuth2InterceptedFeignConfiguration;
 import pt.up.hs.project.config.ApplicationProperties;
 

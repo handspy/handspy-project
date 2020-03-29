@@ -1,22 +1,5 @@
 package pt.up.hs.project.web.rest;
 
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import pt.up.hs.project.ProjectApp;
-import pt.up.hs.project.config.SecurityBeanOverrideConfiguration;
-import pt.up.hs.project.domain.Task;
-import pt.up.hs.project.domain.Project;
-import pt.up.hs.project.domain.Label;
-import pt.up.hs.project.domain.enumeration.Gender;
-import pt.up.hs.project.domain.enumeration.HandwritingMean;
-import pt.up.hs.project.repository.TaskRepository;
-import pt.up.hs.project.service.TaskService;
-import pt.up.hs.project.service.dto.TaskDTO;
-import pt.up.hs.project.service.mapper.TaskMapper;
-import pt.up.hs.project.web.rest.errors.ExceptionTranslator;
-import pt.up.hs.project.service.dto.TaskCriteria;
-import pt.up.hs.project.service.TaskQueryService;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -24,14 +7,25 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.Validator;
+import pt.up.hs.project.ProjectApp;
+import pt.up.hs.project.config.SecurityBeanOverrideConfiguration;
+import pt.up.hs.project.domain.Label;
+import pt.up.hs.project.domain.Project;
+import pt.up.hs.project.domain.Task;
+import pt.up.hs.project.repository.TaskRepository;
+import pt.up.hs.project.service.TaskService;
+import pt.up.hs.project.service.dto.TaskDTO;
+import pt.up.hs.project.service.mapper.TaskMapper;
+import pt.up.hs.project.web.rest.errors.ExceptionTranslator;
 
 import javax.persistence.EntityManager;
 import java.time.Instant;
@@ -40,13 +34,13 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.nullValue;
-import static pt.up.hs.project.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static pt.up.hs.project.web.rest.TestUtil.createFormattingConversionService;
 
 /**
  * Integration tests for the {@link TaskResource} REST controller.
@@ -103,9 +97,6 @@ public class TaskResourceIT {
     private TaskService taskService;
 
     @Autowired
-    private TaskQueryService taskQueryService;
-
-    @Autowired
     private MappingJackson2HttpMessageConverter jacksonMessageConverter;
 
     @Autowired
@@ -128,7 +119,7 @@ public class TaskResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final TaskResource taskResource = new TaskResource(taskService, taskQueryService);
+        final TaskResource taskResource = new TaskResource(taskService);
         this.restTaskMockMvc = MockMvcBuilders.standaloneSetup(taskResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
             .setControllerAdvice(exceptionTranslator)
@@ -273,8 +264,8 @@ public class TaskResourceIT {
     }
 
     public void getAllTasksWithEagerRelationshipsIsEnabled() throws Exception {
-        TaskResource taskResource = new TaskResource(taskServiceMock, taskQueryService);
-        when(taskServiceMock.findAllWithEagerRelationships(projectId, any())).thenReturn(new PageImpl<>(new ArrayList<>()));
+        TaskResource taskResource = new TaskResource(taskServiceMock);
+        when(taskServiceMock.findAllWithEagerRelationships(projectId, null, null, any())).thenReturn(new PageImpl<>(new ArrayList<>()));
 
         MockMvc restTaskMockMvc = MockMvcBuilders.standaloneSetup(taskResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
@@ -285,12 +276,12 @@ public class TaskResourceIT {
         restTaskMockMvc.perform(get("/api/projects/{projectId}/tasks?eagerload=true", projectId))
         .andExpect(status().isOk());
 
-        verify(taskServiceMock, times(1)).findAllWithEagerRelationships(projectId, any());
+        verify(taskServiceMock, times(1)).findAllWithEagerRelationships(projectId, null, null, any());
     }
 
     public void getAllTasksWithEagerRelationshipsIsNotEnabled() throws Exception {
-        TaskResource taskResource = new TaskResource(taskServiceMock, taskQueryService);
-            when(taskServiceMock.findAllWithEagerRelationships(projectId, any())).thenReturn(new PageImpl<>(new ArrayList<>()));
+        TaskResource taskResource = new TaskResource(taskServiceMock);
+            when(taskServiceMock.findAllWithEagerRelationships(projectId, null, null, any())).thenReturn(new PageImpl<>(new ArrayList<>()));
             MockMvc restTaskMockMvc = MockMvcBuilders.standaloneSetup(taskResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
             .setControllerAdvice(exceptionTranslator)
@@ -300,7 +291,7 @@ public class TaskResourceIT {
         restTaskMockMvc.perform(get("/api/projects/{projectId}/tasks?eagerload=true", projectId))
         .andExpect(status().isOk());
 
-            verify(taskServiceMock, times(1)).findAllWithEagerRelationships(projectId, any());
+            verify(taskServiceMock, times(1)).findAllWithEagerRelationships(projectId, null, null, any());
     }
 
     @Test
@@ -324,7 +315,7 @@ public class TaskResourceIT {
     }
 
 
-    @Test
+    /*@Test
     @Transactional
     public void getTasksByIdFiltering() throws Exception {
         // Initialize the database
@@ -706,10 +697,10 @@ public class TaskResourceIT {
 
         // Get all the taskList where endDate is greater than SMALLER_END_DATE
         defaultTaskShouldBeFound("endDate.greaterThan=" + SMALLER_END_DATE);
-    }
+    }*/
 
 
-    @Test
+    /*@Test
     @Transactional
     public void getAllTasksByLabelsIsEqualToSomething() throws Exception {
         // Initialize the database
@@ -726,7 +717,7 @@ public class TaskResourceIT {
 
         // Get all the taskList where labels equals to labelsId + 1
         defaultTaskShouldNotBeFound("labelsId.equals=" + (labelsId + 1));
-    }
+    }*/
 
     /**
      * Executes the search, and checks that the default entity is returned.

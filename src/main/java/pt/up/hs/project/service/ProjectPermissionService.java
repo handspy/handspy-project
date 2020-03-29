@@ -1,42 +1,86 @@
 package pt.up.hs.project.service;
 
+import pt.up.hs.project.service.dto.BulkProjectPermissionDTO;
 import pt.up.hs.project.service.dto.ProjectPermissionDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Service Interface for managing {@link pt.up.hs.project.domain.ProjectPermission}.
+ *
+ * @author José Carlos Paiva
  */
 public interface ProjectPermissionService {
 
     /**
-     * Save a projectPermission.
+     * Save permissions of user in a project, replacing current permissions.
      *
-     * @param projectPermissionDTO the entity to save.
-     * @return the persisted entity.
+     * @param bulkProjectPermissionDTO {@link BulkProjectPermissionDTO} permissions to save.
+     * @return {@link BulkProjectPermissionDTO} permissions of user in a project.
      */
-    ProjectPermissionDTO save(ProjectPermissionDTO projectPermissionDTO);
+    BulkProjectPermissionDTO replaceAll(BulkProjectPermissionDTO bulkProjectPermissionDTO);
 
     /**
-     * Get all the projectPermissions.
+     * Create permissions of user in a project.
      *
-     * @return the list of entities.
+     * @param bulkProjectPermissionDTO {@link BulkProjectPermissionDTO} permissions to save.
+     * @return {@link BulkProjectPermissionDTO} permissions of user in a project.
      */
-    List<ProjectPermissionDTO> findAll();
+    BulkProjectPermissionDTO create(BulkProjectPermissionDTO bulkProjectPermissionDTO);
 
     /**
-     * Get the "id" projectPermission.
+     * Find all permissions of user.
      *
-     * @param id the id of the entity.
-     * @return the entity.
+     * @param user {@link String} user login.
+     * @return {@link List} list of permissions of user.
      */
-    Optional<ProjectPermissionDTO> findOne(Long id);
+    List<BulkProjectPermissionDTO> findAll(String user);
 
     /**
-     * Delete the "id" projectPermission.
+     * Find all permissions of project.
      *
-     * @param id the id of the entity.
+     * @param projectId {@link Long} ID of the project.
+     * @return {@link List} list of permissions of users in project.
      */
-    void delete(Long id);
+    List<BulkProjectPermissionDTO> findAll(Long projectId);
+
+    /**
+     * Find all permissions of user in project.
+     *
+     * @param user {@link String} user login.
+     * @param projectId {@link Long} ID of the project.
+     * @return {@link ProjectPermissionDTO} permissions of user in a project.
+     */
+    BulkProjectPermissionDTO findAll(String user, Long projectId);
+
+    /**
+     * Delete permissions of user in a project.
+     *
+     * @param bulkProjectPermissionDTO {@link BulkProjectPermissionDTO} permissions to delete.
+     */
+    void delete(BulkProjectPermissionDTO bulkProjectPermissionDTO);
+
+    /**
+     * Delete permissions of user in a project.
+     *
+     * @param user {@link String} user login.
+     * @param projectId {@link Long} ID of the project
+     */
+    void deleteAll(String user, Long projectId);
+
+    /**
+     * Delete permissions of project.
+     *
+     * @param projectId {@link Long} ID of the project
+     */
+    void deleteAll(Long projectId);
+
+    /**
+     * Check if user is owner of project.
+     *
+     * @param user the user login to check.
+     * @param projectId the ID of the project.
+     * @return {@code true} if user owns project, {@code false} otherwise.
+     */
+    boolean isOwner(String user, Long projectId);
 }

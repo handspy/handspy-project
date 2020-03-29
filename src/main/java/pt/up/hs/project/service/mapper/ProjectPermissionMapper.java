@@ -1,6 +1,5 @@
 package pt.up.hs.project.service.mapper;
 
-
 import pt.up.hs.project.domain.*;
 import pt.up.hs.project.service.dto.ProjectPermissionDTO;
 
@@ -12,18 +11,20 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring", uses = {ProjectMapper.class})
 public interface ProjectPermissionMapper extends EntityMapper<ProjectPermissionDTO, ProjectPermission> {
 
-    @Mapping(source = "project.id", target = "projectId")
     ProjectPermissionDTO toDto(ProjectPermission projectPermission);
 
-    @Mapping(source = "projectId", target = "project")
+    @Mapping(target = "permission", ignore = true)
+    @Mapping(target = "project", ignore = true)
     ProjectPermission toEntity(ProjectPermissionDTO projectPermissionDTO);
 
-    default ProjectPermission fromId(Long id) {
+    default ProjectPermission fromId(ProjectPermissionId id) {
         if (id == null) {
             return null;
         }
         ProjectPermission projectPermission = new ProjectPermission();
-        projectPermission.setId(id);
+        projectPermission.setUser(id.getUser());
+        projectPermission.setProjectId(id.getProjectId());
+        projectPermission.setPermissionName(id.getPermissionName());
         return projectPermission;
     }
 }

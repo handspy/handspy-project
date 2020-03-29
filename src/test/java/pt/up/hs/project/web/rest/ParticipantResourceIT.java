@@ -26,7 +26,6 @@ import pt.up.hs.project.domain.Project;
 import pt.up.hs.project.domain.enumeration.Gender;
 import pt.up.hs.project.domain.enumeration.HandwritingMean;
 import pt.up.hs.project.repository.ParticipantRepository;
-import pt.up.hs.project.service.ParticipantQueryService;
 import pt.up.hs.project.service.ParticipantService;
 import pt.up.hs.project.service.dto.ParticipantDTO;
 import pt.up.hs.project.service.mapper.ParticipantMapper;
@@ -112,9 +111,6 @@ public class ParticipantResourceIT {
     private ParticipantService participantService;
 
     @Autowired
-    private ParticipantQueryService participantQueryService;
-
-    @Autowired
     private MappingJackson2HttpMessageConverter jacksonMessageConverter;
 
     @Autowired
@@ -137,7 +133,7 @@ public class ParticipantResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final ParticipantResource participantResource = new ParticipantResource(participantService, participantQueryService);
+        final ParticipantResource participantResource = new ParticipantResource(participantService);
         this.restParticipantMockMvc = MockMvcBuilders.standaloneSetup(participantResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
             .setControllerAdvice(exceptionTranslator)
@@ -297,8 +293,8 @@ public class ParticipantResourceIT {
 
     @SuppressWarnings({"unchecked"})
     public void getAllParticipantsWithEagerRelationshipsIsEnabled() throws Exception {
-        ParticipantResource participantResource = new ParticipantResource(participantServiceMock, participantQueryService);
-        when(participantServiceMock.findAllWithEagerRelationships(projectId, any())).thenReturn(new PageImpl<>(new ArrayList<>()));
+        ParticipantResource participantResource = new ParticipantResource(participantServiceMock);
+        when(participantServiceMock.findAllWithEagerRelationships(projectId, null, null, any())).thenReturn(new PageImpl<>(new ArrayList<>()));
 
         MockMvc restParticipantMockMvc = MockMvcBuilders.standaloneSetup(participantResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
@@ -309,13 +305,13 @@ public class ParticipantResourceIT {
         restParticipantMockMvc.perform(get("/api/participants?eagerload=true"))
             .andExpect(status().isOk());
 
-        verify(participantServiceMock, times(1)).findAllWithEagerRelationships(projectId, any());
+        verify(participantServiceMock, times(1)).findAllWithEagerRelationships(projectId, null, null, any());
     }
 
     @SuppressWarnings({"unchecked"})
     public void getAllParticipantsWithEagerRelationshipsIsNotEnabled() throws Exception {
-        ParticipantResource participantResource = new ParticipantResource(participantServiceMock, participantQueryService);
-        when(participantServiceMock.findAllWithEagerRelationships(projectId, any())).thenReturn(new PageImpl<>(new ArrayList<>()));
+        ParticipantResource participantResource = new ParticipantResource(participantServiceMock);
+        when(participantServiceMock.findAllWithEagerRelationships(projectId, null, null, any())).thenReturn(new PageImpl<>(new ArrayList<>()));
         MockMvc restParticipantMockMvc = MockMvcBuilders.standaloneSetup(participantResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
             .setControllerAdvice(exceptionTranslator)
@@ -325,7 +321,7 @@ public class ParticipantResourceIT {
         restParticipantMockMvc.perform(get("/api/projects/{projectId}/participants?eagerload=true", projectId))
             .andExpect(status().isOk());
 
-        verify(participantServiceMock, times(1)).findAllWithEagerRelationships(projectId, any());
+        verify(participantServiceMock, times(1)).findAllWithEagerRelationships(projectId, null, null, any());
     }
 
     @Test
@@ -351,7 +347,7 @@ public class ParticipantResourceIT {
             .andExpect(jsonPath("$.createdDate").exists());
     }
 
-    @Test
+    /*@Test
     @Transactional
     public void getParticipantsByIdFiltering() throws Exception {
         // Initialize the database
@@ -753,7 +749,7 @@ public class ParticipantResourceIT {
 
         // Get all the participantList where labels equals to labelsId + 1
         defaultParticipantShouldNotBeFound("labelsId.equals=" + (labelsId + 1));
-    }
+    }*/
 
     /**
      * Executes the search, and checks that the default entity is returned.

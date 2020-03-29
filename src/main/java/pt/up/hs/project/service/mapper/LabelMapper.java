@@ -1,6 +1,5 @@
 package pt.up.hs.project.service.mapper;
 
-
 import pt.up.hs.project.domain.*;
 import pt.up.hs.project.service.dto.LabelDTO;
 
@@ -9,7 +8,7 @@ import org.mapstruct.*;
 /**
  * Mapper for the entity {@link Label} and its DTO {@link LabelDTO}.
  */
-@Mapper(componentModel = "spring", uses = {ProjectMapper.class})
+@Mapper(componentModel = "spring", uses = {ProjectMapper.class, TaskMapper.class})
 public interface LabelMapper extends EntityMapper<LabelDTO, Label> {
 
     LabelDTO toDto(Label label);

@@ -54,7 +54,7 @@ public class ParticipantQueryService extends QueryService<Participant> {
         log.debug("find by criteria {} in project {}", criteria, projectId);
         final Specification<Participant> specification = createSpecification(criteria)
             .and(equalsSpecification(root -> root.get("projectId"), projectId));
-        return participantMapper.toDto(participantRepository.findAll(specification));
+        return null; // participantMapper.toDto(participantRepository.findAll(specification));
     }
 
     /**
@@ -70,8 +70,8 @@ public class ParticipantQueryService extends QueryService<Participant> {
         log.debug("find by criteria {}, page {} in project {}", criteria, page, projectId);
         final Specification<Participant> specification = createSpecification(criteria)
             .and(equalsSpecification(root -> root.get("projectId"), projectId));
-        return participantRepository.findAll(specification, page)
-            .map(participantMapper::toDto);
+        return null; /*participantRepository.findAll(specification, page)
+            .map(participantMapper::toDto);*/
     }
 
     /**
@@ -86,7 +86,7 @@ public class ParticipantQueryService extends QueryService<Participant> {
         log.debug("count by criteria {} in project {}", criteria, projectId);
         final Specification<Participant> specification = createSpecification(criteria)
             .and(equalsSpecification(root -> root.get("projectId"), projectId));
-        return participantRepository.count(specification);
+        return 0L; // participantRepository.count(specification);
     }
 
     /**

@@ -1,11 +1,11 @@
-id;name;description;status;owner;color
-1;contextually-based Home Loan Account Books;Stand-alone;CLOSED;system;green
-2;Tasty Soft Tuna Kansas;Garden Checking Account;OPEN;system;purple
-3;European Unit of Account 9(E.U.A.-9) Sleek redefine;Keyboard Pre-emptive Mountain;DISCARDED;system;tan
-4;Alley revolutionary;robust solution;DRAFT;system;ivory
-5;Enhanced turquoise;Brand neural;CLOSED;system;magenta
-6;Sleek Frozen Keyboard open-source Oklahoma;multi-byte navigating;DRAFT;system;black
-7;Assurance Faroe Islands;technologies International South Dakota;DRAFT;system;purple
-8;Intelligent Cotton Cheese;indigo Concrete;CLOSED;system;ivory
-9;mindshare actuating Unbranded Wooden Computer;invoice Buckinghamshire Mouse;DRAFT;system;olive
-10;next-generation;Small Rubber Soap open architecture withdrawal;OPEN;system;tan
+id;name;description;status;owner;color;created_by
+1;contextually-based Home Loan Account Books;Stand-alone;CLOSED;system;green;system
+2;Tasty Soft Tuna Kansas;Garden Checking Account;OPEN;system;purple;system
+3;European Unit of Account 9(E.U.A.-9) Sleek redefine;Keyboard Pre-emptive Mountain;DISCARDED;system;tan;system
+4;Alley revolutionary;robust solution;DRAFT;system;ivory;system
+5;Enhanced turquoise;Brand neural;CLOSED;system;magenta;system
+6;Sleek Frozen Keyboard open-source Oklahoma;multi-byte navigating;DRAFT;system;black;system
+7;Assurance Faroe Islands;technologies International South Dakota;DRAFT;system;purple;system
+8;Intelligent Cotton Cheese;indigo Concrete;CLOSED;system;ivory;system
+9;mindshare actuating Unbranded Wooden Computer;invoice Buckinghamshire Mouse;DRAFT;system;olive;system
+10;next-generation;Small Rubber Soap open architecture withdrawal;OPEN;system;tan;system

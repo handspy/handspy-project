@@ -2,12 +2,14 @@ package pt.up.hs.project.web.rest;
 
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.security.web.FilterChainProxy;
+import org.springframework.web.context.WebApplicationContext;
 import pt.up.hs.project.ProjectApp;
 import pt.up.hs.project.config.SecurityBeanOverrideConfiguration;
-import pt.up.hs.project.domain.Project;
-import pt.up.hs.project.domain.Task;
-import pt.up.hs.project.domain.Participant;
+import pt.up.hs.project.domain.*;
 import pt.up.hs.project.repository.ProjectRepository;
+import pt.up.hs.project.security.PermissionsConstants;
 import pt.up.hs.project.service.ProjectService;
 import pt.up.hs.project.service.dto.ProjectDTO;
 import pt.up.hs.project.service.mapper.ProjectMapper;
@@ -32,7 +34,6 @@ import java.time.Instant;
 import java.util.List;
 
 import static pt.up.hs.project.web.rest.ProjectResourceIT.TEST_USER_LOGIN;
-import static pt.up.hs.project.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -44,7 +45,7 @@ import pt.up.hs.project.domain.enumeration.ProjectStatus;
  * Integration tests for the {@link ProjectResource} REST controller.
  */
 @AutoConfigureMockMvc
-@WithMockUser(value = TEST_USER_LOGIN)
+@WithMockUser(value = TEST_USER_LOGIN, authorities = {"ROLE_USER"})
 @SpringBootTest(classes = {SecurityBeanOverrideConfiguration.class, ProjectApp.class})
 public class ProjectResourceIT {
     static final String TEST_USER_LOGIN = "test";
@@ -52,8 +53,8 @@ public class ProjectResourceIT {
     private static final String DEFAULT_NAME = "AAAAAAAAAA";
     private static final String UPDATED_NAME = "BBBBBBBBBB";
 
-    private static final String DEFAULT_DESCRIPTION = "AAAAAAAAAA";
-    private static final String UPDATED_DESCRIPTION = "BBBBBBBBBB";
+    private static final String DEFAULT_DESCRIPTION = "CCCCCCCCCC";
+    private static final String UPDATED_DESCRIPTION = "DDDDDDDDDD";
 
     private static final ProjectStatus DEFAULT_STATUS = ProjectStatus.DRAFT;
     private static final ProjectStatus UPDATED_STATUS = ProjectStatus.OPEN;
@@ -96,6 +97,12 @@ public class ProjectResourceIT {
     @Autowired
     private Validator validator;
 
+    @Autowired
+    FilterChainProxy springSecurityFilterChain;
+
+    @Autowired
+    WebApplicationContext webApplicationContext;
+
     private MockMvc restProjectMockMvc;
 
     private Project project;
@@ -103,13 +110,7 @@ public class ProjectResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        final ProjectResource projectResource = new ProjectResource(projectService, projectQueryService);
-        this.restProjectMockMvc = MockMvcBuilders.standaloneSetup(projectResource)
-            .setCustomArgumentResolvers(pageableArgumentResolver)
-            .setControllerAdvice(exceptionTranslator)
-            .setConversionService(createFormattingConversionService())
-            .setMessageConverters(jacksonMessageConverter)
-            .setValidator(validator)
+        this.restProjectMockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
             .build();
     }
 
@@ -146,6 +147,13 @@ public class ProjectResourceIT {
 
     @BeforeEach
     public void initTest() {
+
+        for (String permissionName: PermissionsConstants.ALL) {
+            Permission permission = new Permission().name(permissionName);
+            em.persist(permission);
+            em.flush();
+        }
+
         project = createEntity(em);
     }
 
@@ -292,7 +300,7 @@ public class ProjectResourceIT {
     @Transactional
     public void getAllProjects() throws Exception {
         // Initialize the database
-        projectRepository.saveAndFlush(project);
+        project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
 
         // Get all the projectList
         restProjectMockMvc.perform(get("/api/projects?sort=id,desc"))
@@ -312,7 +320,7 @@ public class ProjectResourceIT {
     @Transactional
     public void getProject() throws Exception {
         // Initialize the database
-        projectRepository.saveAndFlush(project);
+        project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
 
         // Get the project
         restProjectMockMvc.perform(get("/api/projects/{id}", project.getId()))
@@ -328,401 +336,96 @@ public class ProjectResourceIT {
             .andExpect(jsonPath("$.createdDate").exists());
     }
 
-
     @Test
     @Transactional
-    public void getProjectsByIdFiltering() throws Exception {
+    public void getAllProjectsBySearchQueryWithPartialName() throws Exception {
+
         // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        Long id = project.getId();
-
-        defaultProjectShouldBeFound("id.equals=" + id);
-        defaultProjectShouldNotBeFound("id.notEquals=" + id);
-
-        defaultProjectShouldBeFound("id.greaterThanOrEqual=" + id);
-        defaultProjectShouldNotBeFound("id.greaterThan=" + id);
-
-        defaultProjectShouldBeFound("id.lessThanOrEqual=" + id);
-        defaultProjectShouldNotBeFound("id.lessThan=" + id);
-    }
-
-
-    @Test
-    @Transactional
-    public void getAllProjectsByNameIsEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
+        project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
 
         // Get all the projectList where name equals to DEFAULT_NAME
-        defaultProjectShouldBeFound("name.equals=" + DEFAULT_NAME);
+        defaultProjectShouldBeFound("search=" + DEFAULT_NAME.substring(1, 3));
 
         // Get all the projectList where name equals to UPDATED_NAME
-        defaultProjectShouldNotBeFound("name.equals=" + UPDATED_NAME);
+        defaultProjectShouldNotBeFound("search=" + UPDATED_NAME.substring(1, 3));
     }
 
     @Test
     @Transactional
-    public void getAllProjectsByNameIsNotEqualToSomething() throws Exception {
+    public void getAllProjectsBySearchQueryWithPartialDescription() throws Exception {
+
         // Initialize the database
-        projectRepository.saveAndFlush(project);
+        project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
 
-        // Get all the projectList where name not equals to DEFAULT_NAME
-        defaultProjectShouldNotBeFound("name.notEquals=" + DEFAULT_NAME);
-
-        // Get all the projectList where name not equals to UPDATED_NAME
-        defaultProjectShouldBeFound("name.notEquals=" + UPDATED_NAME);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByNameIsInShouldWork() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where name in DEFAULT_NAME or UPDATED_NAME
-        defaultProjectShouldBeFound("name.in=" + DEFAULT_NAME + "," + UPDATED_NAME);
+        // Get all the projectList where name equals to DEFAULT_NAME
+        defaultProjectShouldBeFound("search=" + DEFAULT_DESCRIPTION.substring(1, 3));
 
         // Get all the projectList where name equals to UPDATED_NAME
-        defaultProjectShouldNotBeFound("name.in=" + UPDATED_NAME);
+        defaultProjectShouldNotBeFound("search=" + UPDATED_DESCRIPTION.substring(1, 3));
     }
 
     @Test
     @Transactional
-    public void getAllProjectsByNameIsNullOrNotNull() throws Exception {
+    public void getAllProjectsByStatus() throws Exception {
+
         // Initialize the database
-        projectRepository.saveAndFlush(project);
+        project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
 
-        // Get all the projectList where name is not null
-        defaultProjectShouldBeFound("name.specified=true");
+        // Get all the projectList where status in [DRAFT]
+        defaultProjectShouldBeFound("status=" + String.join(",", new String[] {ProjectStatus.DRAFT.toString()}));
 
-        // Get all the projectList where name is null
-        defaultProjectShouldNotBeFound("name.specified=false");
-    }
-                @Test
-    @Transactional
-    public void getAllProjectsByNameContainsSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
+        // Get all the projectList where status in [OPEN]
+        defaultProjectShouldNotBeFound("status=" + String.join(",", new String[] {ProjectStatus.OPEN.toString()}));
 
-        // Get all the projectList where name contains DEFAULT_NAME
-        defaultProjectShouldBeFound("name.contains=" + DEFAULT_NAME);
+        // Get all the projectList where status in [CLOSED]
+        defaultProjectShouldNotBeFound("status=" + String.join(",", new String[] {ProjectStatus.CLOSED.toString()}));
 
-        // Get all the projectList where name contains UPDATED_NAME
-        defaultProjectShouldNotBeFound("name.contains=" + UPDATED_NAME);
+        // Get all the projectList where status in [DISCARDED]
+        defaultProjectShouldNotBeFound("status=" + String.join(",", new String[] {ProjectStatus.DISCARDED.toString()}));
     }
 
     @Test
     @Transactional
-    public void getAllProjectsByNameNotContainsSomething() throws Exception {
+    public void getAllProjectsByMultipleStatus() throws Exception {
+
         // Initialize the database
-        projectRepository.saveAndFlush(project);
+        project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
 
-        // Get all the projectList where name does not contain DEFAULT_NAME
-        defaultProjectShouldNotBeFound("name.doesNotContain=" + DEFAULT_NAME);
+        // Get all the projectList where status in [DRAFT,OPEN,CLOSED]
+        defaultProjectShouldBeFound("status=" + String.join(",", new String[] {
+            ProjectStatus.DRAFT.toString(),
+            ProjectStatus.OPEN.toString(),
+            ProjectStatus.CLOSED.toString()
+        }));
 
-        // Get all the projectList where name does not contain UPDATED_NAME
-        defaultProjectShouldBeFound("name.doesNotContain=" + UPDATED_NAME);
-    }
-
-
-    @Test
-    @Transactional
-    public void getAllProjectsByDescriptionIsEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where description equals to DEFAULT_DESCRIPTION
-        defaultProjectShouldBeFound("description.equals=" + DEFAULT_DESCRIPTION);
-
-        // Get all the projectList where description equals to UPDATED_DESCRIPTION
-        defaultProjectShouldNotBeFound("description.equals=" + UPDATED_DESCRIPTION);
+        // Get all the projectList where status in [OPEN,CLOSED,DISCARDED]
+        defaultProjectShouldNotBeFound("status=" + String.join(",", new String[] {
+            ProjectStatus.OPEN.toString(),
+            ProjectStatus.CLOSED.toString(),
+            ProjectStatus.DISCARDED.toString()
+        }));
     }
 
     @Test
     @Transactional
-    public void getAllProjectsByDescriptionIsNotEqualToSomething() throws Exception {
+    public void getAllProjectsByMultipleStatusAndSearch() throws Exception {
+
         // Initialize the database
-        projectRepository.saveAndFlush(project);
+        project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
 
-        // Get all the projectList where description not equals to DEFAULT_DESCRIPTION
-        defaultProjectShouldNotBeFound("description.notEquals=" + DEFAULT_DESCRIPTION);
+        // Get all the projectList where search contains name of default project and status in [DRAFT,OPEN,CLOSED]
+        defaultProjectShouldBeFound("search=" + DEFAULT_NAME + "&status=" + String.join(",", new String[] {
+            ProjectStatus.DRAFT.toString(),
+            ProjectStatus.OPEN.toString(),
+            ProjectStatus.CLOSED.toString()
+        }));
 
-        // Get all the projectList where description not equals to UPDATED_DESCRIPTION
-        defaultProjectShouldBeFound("description.notEquals=" + UPDATED_DESCRIPTION);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByDescriptionIsInShouldWork() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where description in DEFAULT_DESCRIPTION or UPDATED_DESCRIPTION
-        defaultProjectShouldBeFound("description.in=" + DEFAULT_DESCRIPTION + "," + UPDATED_DESCRIPTION);
-
-        // Get all the projectList where description equals to UPDATED_DESCRIPTION
-        defaultProjectShouldNotBeFound("description.in=" + UPDATED_DESCRIPTION);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByDescriptionIsNullOrNotNull() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where description is not null
-        defaultProjectShouldBeFound("description.specified=true");
-
-        // Get all the projectList where description is null
-        defaultProjectShouldNotBeFound("description.specified=false");
-    }
-                @Test
-    @Transactional
-    public void getAllProjectsByDescriptionContainsSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where description contains DEFAULT_DESCRIPTION
-        defaultProjectShouldBeFound("description.contains=" + DEFAULT_DESCRIPTION);
-
-        // Get all the projectList where description contains UPDATED_DESCRIPTION
-        defaultProjectShouldNotBeFound("description.contains=" + UPDATED_DESCRIPTION);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByDescriptionNotContainsSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where description does not contain DEFAULT_DESCRIPTION
-        defaultProjectShouldNotBeFound("description.doesNotContain=" + DEFAULT_DESCRIPTION);
-
-        // Get all the projectList where description does not contain UPDATED_DESCRIPTION
-        defaultProjectShouldBeFound("description.doesNotContain=" + UPDATED_DESCRIPTION);
-    }
-
-
-    @Test
-    @Transactional
-    public void getAllProjectsByStatusIsEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where status equals to DEFAULT_STATUS
-        defaultProjectShouldBeFound("status.equals=" + DEFAULT_STATUS);
-
-        // Get all the projectList where status equals to UPDATED_STATUS
-        defaultProjectShouldNotBeFound("status.equals=" + UPDATED_STATUS);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByStatusIsNotEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where status not equals to DEFAULT_STATUS
-        defaultProjectShouldNotBeFound("status.notEquals=" + DEFAULT_STATUS);
-
-        // Get all the projectList where status not equals to UPDATED_STATUS
-        defaultProjectShouldBeFound("status.notEquals=" + UPDATED_STATUS);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByStatusIsInShouldWork() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where status in DEFAULT_STATUS or UPDATED_STATUS
-        defaultProjectShouldBeFound("status.in=" + DEFAULT_STATUS + "," + UPDATED_STATUS);
-
-        // Get all the projectList where status equals to UPDATED_STATUS
-        defaultProjectShouldNotBeFound("status.in=" + UPDATED_STATUS);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByStatusIsNullOrNotNull() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where status is not null
-        defaultProjectShouldBeFound("status.specified=true");
-
-        // Get all the projectList where status is null
-        defaultProjectShouldNotBeFound("status.specified=false");
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByOwnerIsEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where owner equals to DEFAULT_OWNER
-        defaultProjectShouldBeFound("owner.equals=" + DEFAULT_OWNER);
-
-        // Get all the projectList where owner equals to UPDATED_OWNER
-        defaultProjectShouldNotBeFound("owner.equals=" + UPDATED_OWNER);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByOwnerIsNotEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where owner not equals to DEFAULT_OWNER
-        defaultProjectShouldNotBeFound("owner.notEquals=" + DEFAULT_OWNER);
-
-        // Get all the projectList where owner not equals to UPDATED_OWNER
-        defaultProjectShouldBeFound("owner.notEquals=" + UPDATED_OWNER);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByOwnerIsInShouldWork() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where owner in DEFAULT_OWNER or UPDATED_OWNER
-        defaultProjectShouldBeFound("owner.in=" + DEFAULT_OWNER + "," + UPDATED_OWNER);
-
-        // Get all the projectList where owner equals to UPDATED_OWNER
-        defaultProjectShouldNotBeFound("owner.in=" + UPDATED_OWNER);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByOwnerIsNullOrNotNull() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where owner is not null
-        defaultProjectShouldBeFound("owner.specified=true");
-
-        // Get all the projectList where owner is null
-        defaultProjectShouldNotBeFound("owner.specified=false");
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByColorIsEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where color equals to DEFAULT_COLOR
-        defaultProjectShouldBeFound("color.equals=" + DEFAULT_COLOR);
-
-        // Get all the projectList where color equals to UPDATED_COLOR
-        defaultProjectShouldNotBeFound("color.equals=" + UPDATED_COLOR);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByColorIsNotEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where color not equals to DEFAULT_COLOR
-        defaultProjectShouldNotBeFound("color.notEquals=" + DEFAULT_COLOR);
-
-        // Get all the projectList where color not equals to UPDATED_COLOR
-        defaultProjectShouldBeFound("color.notEquals=" + UPDATED_COLOR);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByColorIsInShouldWork() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where color in DEFAULT_COLOR or UPDATED_COLOR
-        defaultProjectShouldBeFound("color.in=" + DEFAULT_COLOR + "," + UPDATED_COLOR);
-
-        // Get all the projectList where color equals to UPDATED_COLOR
-        defaultProjectShouldNotBeFound("color.in=" + UPDATED_COLOR);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByColorIsNullOrNotNull() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where color is not null
-        defaultProjectShouldBeFound("color.specified=true");
-
-        // Get all the projectList where color is null
-        defaultProjectShouldNotBeFound("color.specified=false");
-    }
-                @Test
-    @Transactional
-    public void getAllProjectsByColorContainsSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where color contains DEFAULT_COLOR
-        defaultProjectShouldBeFound("color.contains=" + DEFAULT_COLOR);
-
-        // Get all the projectList where color contains UPDATED_COLOR
-        defaultProjectShouldNotBeFound("color.contains=" + UPDATED_COLOR);
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByColorNotContainsSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-
-        // Get all the projectList where color does not contain DEFAULT_COLOR
-        defaultProjectShouldNotBeFound("color.doesNotContain=" + DEFAULT_COLOR);
-
-        // Get all the projectList where color does not contain UPDATED_COLOR
-        defaultProjectShouldBeFound("color.doesNotContain=" + UPDATED_COLOR);
-    }
-
-
-    @Test
-    @Transactional
-    public void getAllProjectsByTasksIsEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-        Task tasks = TaskResourceIT.createEntity(project.getId());
-        em.persist(tasks);
-        em.flush();
-        project.addTasks(tasks);
-        projectRepository.saveAndFlush(project);
-        Long tasksId = tasks.getId();
-
-        // Get all the projectList where tasks equals to tasksId
-        defaultProjectShouldBeFound("tasksId.equals=" + tasksId);
-
-        // Get all the projectList where tasks equals to tasksId + 1
-        defaultProjectShouldNotBeFound("tasksId.equals=" + (tasksId + 1));
-    }
-
-
-    @Test
-    @Transactional
-    public void getAllProjectsByParticipantsIsEqualToSomething() throws Exception {
-        // Initialize the database
-        projectRepository.saveAndFlush(project);
-        Participant participants = ParticipantResourceIT.createEntity(project.getId());
-        em.persist(participants);
-        em.flush();
-        project.addParticipants(participants);
-        projectRepository.saveAndFlush(project);
-        Long participantsId = participants.getId();
-
-        // Get all the projectList where participants equals to participantsId
-        defaultProjectShouldBeFound("participantsId.equals=" + participantsId);
-
-        // Get all the projectList where participants equals to participantsId + 1
-        defaultProjectShouldNotBeFound("participantsId.equals=" + (participantsId + 1));
+        // Get all the projectList where search contains name of default project and status in [OPEN,CLOSE,DISCARDEDD]
+        defaultProjectShouldNotBeFound("search=" + DEFAULT_NAME + "&status=" + String.join(",", new String[] {
+            ProjectStatus.OPEN.toString(),
+            ProjectStatus.CLOSED.toString(),
+            ProjectStatus.DISCARDED.toString()
+        }));
     }
 
     /**
@@ -771,7 +474,7 @@ public class ProjectResourceIT {
     public void getNonExistingProject() throws Exception {
         // Get the project
         restProjectMockMvc.perform(get("/api/projects/{id}", Long.MAX_VALUE))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isForbidden());
     }
 
     @Test
@@ -781,7 +484,7 @@ public class ProjectResourceIT {
         Instant beforeCreateInstant = Instant.now();
 
         // Initialize the database
-        projectRepository.saveAndFlush(project);
+        project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
 
         Instant afterCreateInstant = Instant.now();
 
@@ -835,7 +538,7 @@ public class ProjectResourceIT {
         restProjectMockMvc.perform(put("/api/projects")
             .contentType(TestUtil.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(projectDTO)))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isForbidden());
 
         // Validate the Project in the database
         List<Project> projectList = projectRepository.findAll();
@@ -846,7 +549,7 @@ public class ProjectResourceIT {
     @Transactional
     public void deleteProject() throws Exception {
         // Initialize the database
-        projectRepository.saveAndFlush(project);
+        project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
 
         int databaseSizeBeforeDelete = projectRepository.findAll().size();
 

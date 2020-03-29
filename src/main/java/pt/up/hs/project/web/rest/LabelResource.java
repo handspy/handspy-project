@@ -1,23 +1,16 @@
 package pt.up.hs.project.web.rest;
 
-import pt.up.hs.project.service.LabelService;
-import pt.up.hs.project.web.rest.errors.BadRequestAlertException;
-import pt.up.hs.project.service.dto.LabelDTO;
-import pt.up.hs.project.service.dto.LabelCriteria;
-import pt.up.hs.project.service.LabelQueryService;
-
 import io.github.jhipster.web.util.HeaderUtil;
-import io.github.jhipster.web.util.PaginationUtil;
 import io.github.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpHeaders;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import pt.up.hs.project.service.LabelService;
+import pt.up.hs.project.service.dto.LabelDTO;
+import pt.up.hs.project.web.rest.errors.BadRequestAlertException;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -40,11 +33,9 @@ public class LabelResource {
     private String applicationName;
 
     private final LabelService labelService;
-    private final LabelQueryService labelQueryService;
 
-    public LabelResource(LabelService labelService, LabelQueryService labelQueryService) {
+    public LabelResource(LabelService labelService) {
         this.labelService = labelService;
-        this.labelQueryService = labelQueryService;
     }
 
     /**
@@ -57,6 +48,7 @@ public class LabelResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/labels")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
     public ResponseEntity<LabelDTO> createLabel(
         @PathVariable("projectId") Long projectId,
         @Valid @RequestBody LabelDTO labelDTO
@@ -81,6 +73,7 @@ public class LabelResource {
      * or with status {@code 500 (Internal Server Error)} if the labelDTO couldn't be updated.
      */
     @PutMapping("/labels")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
     public ResponseEntity<LabelDTO> updateLabel(
         @PathVariable("projectId") Long projectId,
         @Valid @RequestBody LabelDTO labelDTO
@@ -99,35 +92,31 @@ public class LabelResource {
      * {@code GET  /labels} : get all the labels.
      *
      * @param projectId ID of the project to which the labels belong.
-     * @param pageable  the pagination information.
-     * @param criteria  the criteria which the requested entities should match.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of labels in body.
      */
     @GetMapping("/labels")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<List<LabelDTO>> getAllLabels(
-        @PathVariable("projectId") Long projectId,
-        LabelCriteria criteria, Pageable pageable
+        @PathVariable("projectId") Long projectId
     ) {
-        log.debug("REST request to get Labels by criteria {} in project {}", criteria, projectId);
-        Page<LabelDTO> page = labelQueryService.findByCriteria(projectId, criteria, pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        return ResponseEntity.ok().headers(headers).body(page.getContent());
+        log.debug("REST request to get Labels in project {}", projectId);
+        List<LabelDTO> labels = labelService.findAll(projectId);
+        return ResponseEntity.ok().body(labels);
     }
 
     /**
      * {@code GET  /labels/count} : count all the labels.
      *
      * @param projectId ID of the project to which the labels belong.
-     * @param criteria  the criteria which the requested entities should match.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the count in body.
      */
     @GetMapping("/labels/count")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<Long> countLabels(
-        @PathVariable("projectId") Long projectId,
-        LabelCriteria criteria
+        @PathVariable("projectId") Long projectId
     ) {
-        log.debug("REST request to count Labels by criteria {} in project {}", criteria, projectId);
-        return ResponseEntity.ok().body(labelQueryService.countByCriteria(projectId, criteria));
+        log.debug("REST request to count Labels in project {}", projectId);
+        return ResponseEntity.ok().body(labelService.count(projectId));
     }
 
     /**
@@ -138,6 +127,7 @@ public class LabelResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the labelDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/labels/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<LabelDTO> getLabel(
         @PathVariable("projectId") Long projectId,
         @PathVariable Long id
@@ -155,6 +145,7 @@ public class LabelResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/labels/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'MANAGE')")
     public ResponseEntity<Void> deleteLabel(
         @PathVariable("projectId") Long projectId,
         @PathVariable Long id

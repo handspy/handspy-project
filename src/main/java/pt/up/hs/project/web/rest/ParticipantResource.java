@@ -1,12 +1,11 @@
 package pt.up.hs.project.web.rest;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.multipart.MultipartFile;
 import pt.up.hs.project.service.ParticipantService;
 import pt.up.hs.project.service.dto.BulkImportResultDTO;
 import pt.up.hs.project.web.rest.errors.BadRequestAlertException;
 import pt.up.hs.project.service.dto.ParticipantDTO;
-import pt.up.hs.project.service.dto.ParticipantCriteria;
-import pt.up.hs.project.service.ParticipantQueryService;
 
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.PaginationUtil;
@@ -45,11 +44,8 @@ public class ParticipantResource {
 
     private final ParticipantService participantService;
 
-    private final ParticipantQueryService participantQueryService;
-
-    public ParticipantResource(ParticipantService participantService, ParticipantQueryService participantQueryService) {
+    public ParticipantResource(ParticipantService participantService) {
         this.participantService = participantService;
-        this.participantQueryService = participantQueryService;
     }
 
     /**
@@ -61,6 +57,7 @@ public class ParticipantResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/participants")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
     public ResponseEntity<ParticipantDTO> createParticipant(
         @PathVariable("projectId") Long projectId,
         @Valid @RequestBody ParticipantDTO participantDTO
@@ -84,13 +81,13 @@ public class ParticipantResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated participantDTO,
      * or with status {@code 400 (Bad Request)} if the participantDTO is not valid,
      * or with status {@code 500 (Internal Server Error)} if the participantDTO couldn't be updated.
-     * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/participants")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
     public ResponseEntity<ParticipantDTO> updateParticipant(
         @PathVariable("projectId") Long projectId,
         @Valid @RequestBody ParticipantDTO participantDTO
-    ) throws URISyntaxException {
+    ) {
         log.debug("REST request to update Participant {} in project {}", participantDTO, projectId);
         if (participantDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
@@ -105,17 +102,22 @@ public class ParticipantResource {
      * {@code GET  /participants} : get all the participants.
      *
      * @param projectId ID of the project to which this participants belong.
+     * @param search the search string.
+     * @param labels the ids of the labels to filter by.
      * @param pageable  the pagination information.
-     * @param criteria  the criteria which the requested entities should match.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of participants in body.
      */
     @GetMapping("/participants")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<List<ParticipantDTO>> getAllParticipants(
         @PathVariable("projectId") Long projectId,
-        ParticipantCriteria criteria, Pageable pageable
+        @RequestParam(value = "search", required = false) String search,
+        @RequestParam(value = "labels", required = false) Long[] labels,
+        /*ParticipantCriteria criteria,*/
+        Pageable pageable
     ) {
-        log.debug("REST request to get Participants by criteria {} in project {}", criteria, projectId);
-        Page<ParticipantDTO> page = participantQueryService.findByCriteria(projectId, criteria, pageable);
+        log.debug("REST request to get Participants in project {}", projectId);
+        Page<ParticipantDTO> page = participantService.findAll(projectId, search, labels, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
@@ -124,16 +126,19 @@ public class ParticipantResource {
      * {@code GET  /participants/count} : count all the participants.
      *
      * @param projectId ID of the project to which this participants belong.
-     * @param criteria  the criteria which the requested entities should match.
+     * @param search the search string.
+     * @param labels the ids of the labels to filter by.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the count in body.
      */
     @GetMapping("/participants/count")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<Long> countParticipants(
         @PathVariable("projectId") Long projectId,
-        ParticipantCriteria criteria
+        @RequestParam(value = "search", required = false) String search,
+        @RequestParam(value = "labels", required = false) Long[] labels
     ) {
-        log.debug("REST request to count Participants by criteria {} in project {}", criteria, projectId);
-        return ResponseEntity.ok().body(participantQueryService.countByCriteria(projectId, criteria));
+        log.debug("REST request to count Participants in project {}", projectId);
+        return ResponseEntity.ok().body(participantService.count(projectId, search, labels));
     }
 
     /**
@@ -145,6 +150,7 @@ public class ParticipantResource {
      * body the participantDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/participants/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<ParticipantDTO> getParticipant(
         @PathVariable("projectId") Long projectId,
         @PathVariable Long id
@@ -166,6 +172,7 @@ public class ParticipantResource {
      * body the {@link BulkImportResultDTO}.
      */
     @PostMapping(value = "/participants/import", consumes = "text/csv")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
     public ResponseEntity<BulkImportResultDTO<ParticipantDTO>> importSimple(
         @PathVariable("projectId") Long projectId,
         @RequestParam(value = "sep", defaultValue = ",") String sep,
@@ -189,6 +196,7 @@ public class ParticipantResource {
      * body the {@link BulkImportResultDTO}.
      */
     @PostMapping(value = "/participants/import", consumes = "multipart/form-data")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
     public ResponseEntity<BulkImportResultDTO<ParticipantDTO>> importMultipart(
         @PathVariable("projectId") Long projectId,
         @RequestParam(value = "sep", defaultValue = ",") String sep,
@@ -210,6 +218,7 @@ public class ParticipantResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/participants/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'MANAGE')")
     public ResponseEntity<Void> deleteParticipant(
         @PathVariable("projectId") Long projectId,
         @PathVariable Long id

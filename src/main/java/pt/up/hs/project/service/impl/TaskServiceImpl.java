@@ -88,14 +88,16 @@ public class TaskServiceImpl implements TaskService {
      * Get all the tasks.
      *
      * @param projectId the ID of the project containing the tasks.
+     * @param search the search string.
+     * @param labelIds the ids of the labels to filter by.
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<TaskDTO> findAll(Long projectId, Pageable pageable) {
+    public Page<TaskDTO> findAll(Long projectId, String search, Long[] labelIds, Pageable pageable) {
         log.debug("Request to get all Tasks from project {}", projectId);
-        return taskRepository.findAllByProjectId(projectId, pageable)
+        return taskRepository.findAllByProjectId(projectId, search, labelIds, pageable)
             .map(taskMapper::toDto);
     }
 
@@ -103,16 +105,33 @@ public class TaskServiceImpl implements TaskService {
      * Get all the tasks with eager load of many-to-many relationships.
      *
      * @param projectId the ID of the project containing the tasks.
+     * @param search the search string.
+     * @param labelIds the ids of the labels to filter by.
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<TaskDTO> findAllWithEagerRelationships(Long projectId, Pageable pageable) {
+    public Page<TaskDTO> findAllWithEagerRelationships(Long projectId, String search, Long[] labelIds, Pageable pageable) {
         log.debug("Request to get all Tasks with eager relationships from project {}", projectId);
         return taskRepository
-            .findAllWithEagerRelationships(projectId, pageable)
+            .findAllWithEagerRelationships(projectId, search, labelIds, pageable)
             .map(taskMapper::toDto);
+    }
+
+    /**
+     * Count the tasks with eager load of many-to-many relationships.
+     *
+     * @param projectId the ID of the project containing the tasks.
+     * @param search the search string.
+     * @param labelIds the ids of the labels to filter by.
+     * @return the number of entities.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public long count(Long projectId, String search, Long[] labelIds) {
+        log.debug("Request to count Tasks from project {}", projectId);
+        return taskRepository.count(projectId, search, labelIds);
     }
 
     /**

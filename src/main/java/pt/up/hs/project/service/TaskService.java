@@ -36,19 +36,33 @@ public interface TaskService {
      * Get all the tasks.
      *
      * @param projectId the ID of the project containing the tasks.
+     * @param search the search string.
+     * @param labelIds the ids of the labels to filter by.
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
-    Page<TaskDTO> findAll(Long projectId, Pageable pageable);
+    Page<TaskDTO> findAll(Long projectId, String search, Long[] labelIds, Pageable pageable);
 
     /**
      * Get all the tasks with eager load of many-to-many relationships.
      *
      * @param projectId the ID of the project containing the tasks.
+     * @param search the search string.
+     * @param labelIds the ids of the labels to filter by.
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
-    Page<TaskDTO> findAllWithEagerRelationships(Long projectId, Pageable pageable);
+    Page<TaskDTO> findAllWithEagerRelationships(Long projectId, String search, Long[] labelIds, Pageable pageable);
+
+    /**
+     * Count the tasks with eager load of many-to-many relationships.
+     *
+     * @param projectId the ID of the project containing the tasks.
+     * @param search the search string.
+     * @param labelIds the ids of the labels to filter by.
+     * @return the list of entities.
+     */
+    long count(Long projectId, String search, Long[] labelIds);
 
     /**
      * Get the "id" task.

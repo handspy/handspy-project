@@ -3,8 +3,8 @@ package pt.up.hs.project.service;
 import pt.up.hs.project.service.dto.LabelDTO;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -34,10 +34,17 @@ public interface LabelService {
      * Get all the labels.
      *
      * @param projectId ID of the project containing the labels.
-     * @param pageable the pagination information.
      * @return the list of entities.
      */
-    Page<LabelDTO> findAll(Long projectId, Pageable pageable);
+    List<LabelDTO> findAll(Long projectId);
+
+    /**
+     * Count the labels.
+     *
+     * @param projectId ID of the project containing the labels.
+     * @return the number of entities.
+     */
+    long count(Long projectId);
 
     /**
      * Get the "id" label.

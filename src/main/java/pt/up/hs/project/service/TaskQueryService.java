@@ -54,7 +54,7 @@ public class TaskQueryService extends QueryService<Task> {
         log.debug("find by criteria {} in project {}", criteria, projectId);
         final Specification<Task> specification = createSpecification(criteria)
             .and(equalsSpecification(root -> root.get("projectId"), projectId));
-        return taskMapper.toDto(taskRepository.findAll(specification));
+        return null; // taskMapper.toDto(taskRepository.findAll(specification));
     }
 
     /**
@@ -70,8 +70,8 @@ public class TaskQueryService extends QueryService<Task> {
         log.debug("find by criteria {}, page {} in project {}", criteria, page, projectId);
         final Specification<Task> specification = createSpecification(criteria)
             .and(equalsSpecification(root -> root.get("projectId"), projectId));
-        return taskRepository.findAll(specification, page)
-            .map(taskMapper::toDto);
+        return null/*taskRepository.findAll(specification, page)
+            .map(taskMapper::toDto)*/;
     }
 
     /**
@@ -86,7 +86,7 @@ public class TaskQueryService extends QueryService<Task> {
         log.debug("count by criteria {} in project {}", criteria, projectId);
         final Specification<Task> specification = createSpecification(criteria)
             .and(equalsSpecification(root -> root.get("projectId"), projectId));
-        return taskRepository.count(specification);
+        return 0L; // taskRepository.count(specification);
     }
 
     /**

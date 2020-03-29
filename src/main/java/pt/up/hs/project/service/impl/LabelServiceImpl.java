@@ -9,11 +9,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Service Implementation for managing {@link Label}.
@@ -71,15 +72,29 @@ public class LabelServiceImpl implements LabelService {
      * Get all the labels.
      *
      * @param projectId ID of the project containing the labels.
-     * @param pageable  the pagination information.
      * @return the list of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<LabelDTO> findAll(Long projectId, Pageable pageable) {
+    public List<LabelDTO> findAll(Long projectId) {
         log.debug("Request to get all Labels from project {}", projectId);
-        return labelRepository.findAllByProjectId(projectId, pageable)
-            .map(labelMapper::toDto);
+        return labelRepository.findAllByProjectId(projectId)
+            .parallelStream()
+            .map(labelMapper::toDto)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Count the labels.
+     *
+     * @param projectId ID of the project containing the labels.
+     * @return the number of entities.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public long count(Long projectId) {
+        log.debug("Request to count labels from project {}", projectId);
+        return labelRepository.countByProjectId(projectId);
     }
 
     /**
