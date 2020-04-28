@@ -9,6 +9,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.up.hs.project.constants.ErrorKeys;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -33,7 +34,7 @@ public class ExceptionTranslatorIT {
         mockMvc.perform(get("/api/exception-translator-test/concurrency-failure").with(csrf()))
             .andExpect(status().isConflict())
             .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-            .andExpect(jsonPath("$.message").value(ErrorConstants.ERR_CONCURRENCY_FAILURE));
+            .andExpect(jsonPath("$.message").value(ErrorKeys.ERR_CONCURRENCY_FAILURE));
     }
 
     @Test
@@ -41,7 +42,7 @@ public class ExceptionTranslatorIT {
          mockMvc.perform(post("/api/exception-translator-test/method-argument").content("{}").contentType(MediaType.APPLICATION_JSON).with(csrf()))
              .andExpect(status().isBadRequest())
              .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-             .andExpect(jsonPath("$.message").value(ErrorConstants.ERR_VALIDATION))
+             .andExpect(jsonPath("$.message").value(ErrorKeys.ERR_VALIDATION))
              .andExpect(jsonPath("$.fieldErrors.[0].objectName").value("test"))
              .andExpect(jsonPath("$.fieldErrors.[0].field").value("test"))
              .andExpect(jsonPath("$.fieldErrors.[0].message").value("NotNull"));

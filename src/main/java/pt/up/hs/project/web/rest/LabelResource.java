@@ -8,9 +8,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import pt.up.hs.project.constants.EntityNames;
+import pt.up.hs.project.constants.ErrorKeys;
 import pt.up.hs.project.service.LabelService;
 import pt.up.hs.project.service.dto.LabelDTO;
-import pt.up.hs.project.web.rest.errors.BadRequestAlertException;
+import pt.up.hs.project.web.rest.errors.BadRequestException;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -26,8 +28,6 @@ import java.util.Optional;
 public class LabelResource {
 
     private final Logger log = LoggerFactory.getLogger(LabelResource.class);
-
-    private static final String ENTITY_NAME = "projectLabel";
 
     @Value("${jhipster.clientApp.name}")
     private String applicationName;
@@ -55,11 +55,11 @@ public class LabelResource {
     ) throws URISyntaxException {
         log.debug("REST request to save Label {} in project {}", labelDTO, projectId);
         if (labelDTO.getId() != null) {
-            throw new BadRequestAlertException("A new label cannot already have an ID", ENTITY_NAME, "idexists");
+            throw new BadRequestException("A new label cannot already have an ID", EntityNames.LABEL, ErrorKeys.ERR_ID_EXISTS);
         }
         LabelDTO result = labelService.save(projectId, labelDTO);
         return ResponseEntity.created(new URI("/api/projects/" + projectId + "/labels/" + result.getId()))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, EntityNames.LABEL, result.getId().toString()))
             .body(result);
     }
 
@@ -80,11 +80,11 @@ public class LabelResource {
     ) {
         log.debug("REST request to update Label {} in project {}", labelDTO, projectId);
         if (labelDTO.getId() == null) {
-            throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
+            throw new BadRequestException("Invalid id", EntityNames.LABEL, ErrorKeys.ERR_ID_NULL);
         }
         LabelDTO result = labelService.save(projectId, labelDTO);
         return ResponseEntity.ok()
-            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, labelDTO.getId().toString()))
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, EntityNames.LABEL, labelDTO.getId().toString()))
             .body(result);
     }
 
@@ -152,6 +152,8 @@ public class LabelResource {
     ) {
         log.debug("REST request to delete Label {} in project {}", id, projectId);
         labelService.delete(projectId, id);
-        return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())).build();
+        return ResponseEntity.noContent()
+            .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, EntityNames.LABEL, id.toString()))
+            .build();
     }
 }

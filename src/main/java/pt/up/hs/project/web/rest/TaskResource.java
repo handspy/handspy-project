@@ -14,10 +14,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import pt.up.hs.project.constants.EntityNames;
+import pt.up.hs.project.constants.ErrorKeys;
 import pt.up.hs.project.service.TaskService;
 import pt.up.hs.project.service.dto.BulkImportResultDTO;
 import pt.up.hs.project.service.dto.TaskDTO;
-import pt.up.hs.project.web.rest.errors.BadRequestAlertException;
+import pt.up.hs.project.web.rest.errors.BadRequestException;
 
 import javax.validation.Valid;
 import java.io.IOException;
@@ -35,8 +37,6 @@ import java.util.Optional;
 public class TaskResource {
 
     private final Logger log = LoggerFactory.getLogger(TaskResource.class);
-
-    private static final String ENTITY_NAME = "projectTask";
 
     @Value("${jhipster.clientApp.name}")
     private String applicationName;
@@ -63,11 +63,11 @@ public class TaskResource {
     ) throws URISyntaxException {
         log.debug("REST request to save Task {} in project {}", taskDTO, projectId);
         if (taskDTO.getId() != null) {
-            throw new BadRequestAlertException("A new task cannot already have an ID", ENTITY_NAME, "idexists");
+            throw new BadRequestException("A new task cannot already have an ID", EntityNames.TASK, ErrorKeys.ERR_ID_EXISTS);
         }
         TaskDTO result = taskService.save(projectId, taskDTO);
         return ResponseEntity.created(new URI("/api/projects/" + projectId + "/tasks/" + result.getId()))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, EntityNames.TASK, result.getId().toString()))
             .body(result);
     }
 
@@ -88,11 +88,11 @@ public class TaskResource {
     ) {
         log.debug("REST request to update Task {} in project {}", taskDTO, projectId);
         if (taskDTO.getId() == null) {
-            throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
+            throw new BadRequestException("Invalid id", EntityNames.TASK, ErrorKeys.ERR_ID_NULL);
         }
         TaskDTO result = taskService.save(projectId, taskDTO);
         return ResponseEntity.ok()
-            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, taskDTO.getId().toString()))
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, EntityNames.TASK, taskDTO.getId().toString()))
             .body(result);
     }
 
@@ -109,8 +109,8 @@ public class TaskResource {
     @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<List<TaskDTO>> getAllTasks(
         @PathVariable("projectId") Long projectId,
-        @RequestParam(value = "search", required = false) String search,
-        @RequestParam(value = "labels", required = false) Long[] labels,
+        @RequestParam(value = "search", required = false, defaultValue = "") String search,
+        @RequestParam(value = "labels", required = false) List<Long> labels,
         Pageable pageable
     ) {
         log.debug("REST request to get Tasks in project {}", projectId);
@@ -131,8 +131,8 @@ public class TaskResource {
     @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<Long> countTasks(
         @PathVariable("projectId") Long projectId,
-        @RequestParam(value = "search", required = false) String search,
-        @RequestParam(value = "labels", required = false) Long[] labels
+        @RequestParam(value = "search", required = false, defaultValue = "") String search,
+        @RequestParam(value = "labels", required = false) List<Long> labels
     ) {
         log.debug("REST request to count Tasks in project {}", projectId);
         return ResponseEntity.ok().body(taskService.count(projectId, search, labels));
@@ -223,7 +223,7 @@ public class TaskResource {
         log.debug("REST request to delete Task {} in project {}", id, projectId);
         taskService.delete(projectId, id);
         return ResponseEntity.noContent().headers(
-            HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())
+            HeaderUtil.createEntityDeletionAlert(applicationName, true, EntityNames.TASK, id.toString())
         ).build();
     }
 }

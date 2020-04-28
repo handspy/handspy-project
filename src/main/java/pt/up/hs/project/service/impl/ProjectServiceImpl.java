@@ -11,6 +11,7 @@ import pt.up.hs.project.domain.Project;
 import pt.up.hs.project.domain.enumeration.ProjectStatus;
 import pt.up.hs.project.repository.ProjectRepository;
 import pt.up.hs.project.security.PermissionsConstants;
+import pt.up.hs.project.security.SecurityUtils;
 import pt.up.hs.project.service.ProjectPermissionService;
 import pt.up.hs.project.service.ProjectService;
 import pt.up.hs.project.service.dto.BulkProjectPermissionDTO;
@@ -61,6 +62,14 @@ public class ProjectServiceImpl implements ProjectService {
         log.debug("Request to save Project : {}", projectDTO);
         Project project = projectMapper.toEntity(projectDTO);
 
+        if (project.getOwner() == null) {
+            Optional<String> login = SecurityUtils.getCurrentUserLogin();
+            if (!login.isPresent()) {
+                throw new IllegalArgumentException("Owner not provided");
+            }
+            project.setOwner(login.get());
+        }
+
         // if project exists, check if owner changed
         boolean changed = false;
         if (project.getId() != null) {
@@ -68,7 +77,7 @@ public class ProjectServiceImpl implements ProjectService {
             if (oldProject.isPresent()) {
                 // if project owner changed, remove his/her permissions
                 if (!Objects.equals(oldProject.get().getOwner(), projectDTO.getOwner())) {
-                    projectPermissionService.deleteAll(oldProject.get().getOwner(), project.getId());
+                    projectPermissionService.deleteAll(project.getId(), oldProject.get().getOwner());
                     changed = true;
                 }
             }
@@ -78,7 +87,9 @@ public class ProjectServiceImpl implements ProjectService {
 
         // save project owner's permissions
         if (projectDTO.getId() == null || changed) {
-            projectPermissionService.replaceAll(
+            projectPermissionService.replace(
+                project.getId(),
+                project.getOwner(),
                 new BulkProjectPermissionDTO(
                     project.getOwner(),
                     project.getId(),

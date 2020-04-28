@@ -25,14 +25,16 @@ public class ProjectPermissionDTO implements Serializable {
      * A permission (project) refers to a project.
      */
     @NotNull
-    @ApiModelProperty(value = "A permission (project) refers to a project.")
+    @ApiModelProperty(value = "A permission (project) refers to a project.", required = true)
     private Long projectId;
 
     /**
      * The permission of this entry.
      */
-    @ApiModelProperty(value = "A permission of this user in this project.")
+    @ApiModelProperty(value = "A permission of this user in this project.", required = true)
     private String permissionName;
+
+
 
     public String getUser() {
         return user;

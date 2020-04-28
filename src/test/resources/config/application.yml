@@ -37,7 +37,7 @@ spring:
   jpa:
     database-platform: io.github.jhipster.domain.util.FixedH2Dialect
     open-in-view: false
-    show-sql: false
+    show-sql: true
     hibernate:
       ddl-auto: none
       naming:
@@ -75,6 +75,14 @@ spring:
         size: 1
   thymeleaf:
     mode: HTML
+
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: trace
+        jdbc: trace
+        type: trace
 
 server:
   port: 10344

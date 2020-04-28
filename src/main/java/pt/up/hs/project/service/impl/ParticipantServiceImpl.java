@@ -92,15 +92,15 @@ public class ParticipantServiceImpl implements ParticipantService {
      *
      * @param projectId the ID of the project containing the participants.
      * @param search the search string.
-     * @param labelIds the ids of the labels to filter by.
+     * @param labels the ids of the labels to filter by.
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<ParticipantDTO> findAll(Long projectId, String search, Long[] labelIds, Pageable pageable) {
+    public Page<ParticipantDTO> findAll(Long projectId, String search, List<Long> labels, Pageable pageable) {
         log.debug("Request to get all Participants from project {}", projectId);
-        return participantRepository.findAllByProjectId(projectId, search, labelIds, pageable)
+        return participantRepository.findAllByProjectId(projectId, search, labels, pageable)
             .map(participantMapper::toDto);
     }
 
@@ -109,16 +109,16 @@ public class ParticipantServiceImpl implements ParticipantService {
      *
      * @param projectId the ID of the project containing the participants.
      * @param search the search string.
-     * @param labelIds the ids of the labels to filter by.
+     * @param labels the ids of the labels to filter by.
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<ParticipantDTO> findAllWithEagerRelationships(Long projectId, String search, Long[] labelIds, Pageable pageable) {
+    public Page<ParticipantDTO> findAllWithEagerRelationships(Long projectId, String search, List<Long> labels, Pageable pageable) {
         log.debug("Request to get all Participants with eager relationships from project {}", projectId);
         return participantRepository
-            .findAllWithEagerRelationships(projectId, search, labelIds, pageable)
+            .findAllWithEagerRelationships(projectId, search, labels, pageable)
             .map(participantMapper::toDto);
     }
 
@@ -127,14 +127,14 @@ public class ParticipantServiceImpl implements ParticipantService {
      *
      * @param projectId the ID of the project containing the tasks.
      * @param search the search string.
-     * @param labelIds the ids of the labels to filter by.
+     * @param labels the ids of the labels to filter by.
      * @return the number of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public long count(Long projectId, String search, Long[] labelIds) {
+    public long count(Long projectId, String search, List<Long> labels) {
         log.debug("Request to count Participants from project {}", projectId);
-        return participantRepository.count(projectId, search, labelIds);
+        return participantRepository.count(projectId, search, labels);
     }
 
     /**

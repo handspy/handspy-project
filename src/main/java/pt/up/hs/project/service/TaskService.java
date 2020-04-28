@@ -41,7 +41,7 @@ public interface TaskService {
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
-    Page<TaskDTO> findAll(Long projectId, String search, Long[] labelIds, Pageable pageable);
+    Page<TaskDTO> findAll(Long projectId, String search, List<Long> labelIds, Pageable pageable);
 
     /**
      * Get all the tasks with eager load of many-to-many relationships.
@@ -52,7 +52,7 @@ public interface TaskService {
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
-    Page<TaskDTO> findAllWithEagerRelationships(Long projectId, String search, Long[] labelIds, Pageable pageable);
+    Page<TaskDTO> findAllWithEagerRelationships(Long projectId, String search, List<Long> labelIds, Pageable pageable);
 
     /**
      * Count the tasks with eager load of many-to-many relationships.
@@ -62,7 +62,7 @@ public interface TaskService {
      * @param labelIds the ids of the labels to filter by.
      * @return the list of entities.
      */
-    long count(Long projectId, String search, Long[] labelIds);
+    long count(Long projectId, String search, List<Long> labelIds);
 
     /**
      * Get the "id" task.

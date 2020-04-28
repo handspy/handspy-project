@@ -1,21 +1,43 @@
 package pt.up.hs.project.domain;
 
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.Objects;
 
+@Embeddable
 public class ProjectPermissionId implements Serializable {
 
+    /**
+     * A permission belongs to a user.
+     */
+    @NotNull
+    @Column(name = "hs_user", nullable = false)
     private String user;
-    private Long projectId;
-    private String permissionName;
+
+    /**
+     * A permission refers to a project.
+     */
+    @JoinColumn(name = "project_id", nullable = false)
+    @MapsId("project_id")
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    private Project project;
+
+    /**
+     * The permission of this entry.
+     */
+    @JoinColumn(name = "permission_name", referencedColumnName = "name", nullable = false)
+    @MapsId("permission_name")
+    @ManyToOne(optional = false, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Permission permission;
 
     public ProjectPermissionId() {
     }
 
-    public ProjectPermissionId(String user, Long projectId, String permissionName) {
+    public ProjectPermissionId(@NotNull String user, Project project, Permission permission) {
         this.user = user;
-        this.projectId = projectId;
-        this.permissionName = permissionName;
+        this.project = project;
+        this.permission = permission;
     }
 
     public String getUser() {
@@ -26,20 +48,20 @@ public class ProjectPermissionId implements Serializable {
         this.user = user;
     }
 
-    public Long getProjectId() {
-        return projectId;
+    public Project getProject() {
+        return project;
     }
 
-    public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+    public void setProject(Project project) {
+        this.project = project;
     }
 
-    public String getPermissionName() {
-        return permissionName;
+    public Permission getPermission() {
+        return permission;
     }
 
-    public void setPermissionName(String permissionName) {
-        this.permissionName = permissionName;
+    public void setPermission(Permission permission) {
+        this.permission = permission;
     }
 
     @Override
@@ -47,13 +69,22 @@ public class ProjectPermissionId implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ProjectPermissionId that = (ProjectPermissionId) o;
-        return user.equals(that.user) &&
-            projectId.equals(that.projectId) &&
-            permissionName.equals(that.permissionName);
+        return Objects.equals(getUser(), that.getUser()) &&
+            Objects.equals(getProject(), that.getProject()) &&
+            Objects.equals(getPermission(), that.getPermission());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(user, projectId, permissionName);
+        return Objects.hash(getUser(), getProject(), getPermission());
+    }
+
+    @Override
+    public String toString() {
+        return "ProjectPermissionId{" +
+            "user='" + user + '\'' +
+            ", project=" + project +
+            ", permission=" + permission +
+        '}';
     }
 }

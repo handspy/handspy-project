@@ -34,7 +34,6 @@ public class TaskQueryService extends QueryService<Task> {
     private final Logger log = LoggerFactory.getLogger(TaskQueryService.class);
 
     private final TaskRepository taskRepository;
-
     private final TaskMapper taskMapper;
 
     public TaskQueryService(TaskRepository taskRepository, TaskMapper taskMapper) {

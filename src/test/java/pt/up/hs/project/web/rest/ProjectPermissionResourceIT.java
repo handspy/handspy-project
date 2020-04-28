@@ -73,7 +73,7 @@ public class ProjectPermissionResourceIT {
 
     private ProjectPermission projectPermission;
 
-    // @BeforeEach
+    @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
         final ProjectPermissionResource projectPermissionResource = new ProjectPermissionResource(projectPermissionService);
@@ -103,7 +103,7 @@ public class ProjectPermissionResourceIT {
         } else {
             project = TestUtil.findAll(em, Project.class).get(0);
         }
-        projectPermission.setProjectId(project.getId());
+        projectPermission.setProject(project);
         Permission permission;
         if (TestUtil.findAll(em, Permission.class).isEmpty()) {
             permission = new Permission().name(DEFAULT_PERMISSION);
@@ -112,7 +112,7 @@ public class ProjectPermissionResourceIT {
         } else {
             permission = TestUtil.findAll(em, Permission.class).get(0);
         }
-        projectPermission.setPermissionName(permission.getName());
+        projectPermission.setPermission(permission);
         return projectPermission;
     }
     /**
@@ -133,7 +133,7 @@ public class ProjectPermissionResourceIT {
         } else {
             project = TestUtil.findAll(em, Project.class).get(0);
         }
-        projectPermission.setProjectId(project.getId());
+        projectPermission.setProject(project);
         Permission permission;
         if (TestUtil.findAll(em, Permission.class).isEmpty()) {
             permission = new Permission().name(UPDATED_PERMISSION);
@@ -142,7 +142,7 @@ public class ProjectPermissionResourceIT {
         } else {
             permission = TestUtil.findAll(em, Permission.class).get(0);
         }
-        projectPermission.setPermissionName(permission.getName());
+        projectPermission.setPermission(permission);
         return projectPermission;
     }
 
@@ -225,19 +225,19 @@ public class ProjectPermissionResourceIT {
             .andExpect(jsonPath("$.[*].permission").value(hasItem(DEFAULT_PERMISSION)));
     }
 
-    // @Test
+    @Test
     @Transactional
     public void getProjectPermission() throws Exception {
         // Initialize the database
         projectPermissionRepository.saveAndFlush(projectPermission);
 
         // Get the projectPermission
-        /*restProjectPermissionMockMvc.perform(get("/api/project-permissions/{id}", projectPermission.getId()))
+        restProjectPermissionMockMvc.perform(get("/api/projects/{projectId}/permissions", projectPermission.getId().getProject().getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("$.id").value(projectPermission.getId().intValue()))
-            .andExpect(jsonPath("$.user").value(DEFAULT_USER))
-            .andExpect(jsonPath("$.permission").value(DEFAULT_PERMISSION));*/
+            .andExpect(jsonPath("$.[*].projectId").value(projectPermission.getId().getProject().getId().intValue()))
+            .andExpect(jsonPath("$.[*].user").value(DEFAULT_USER))
+            .andExpect(jsonPath("$.[*].permissions.[*]").value(hasItem(projectPermission.getId().getPermission().getName())));
     }
 
 

@@ -6,9 +6,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import pt.up.hs.project.constants.EntityNames;
+import pt.up.hs.project.constants.ErrorKeys;
 import pt.up.hs.project.service.ProjectPermissionService;
 import pt.up.hs.project.service.dto.BulkProjectPermissionDTO;
-import pt.up.hs.project.web.rest.errors.BadRequestAlertException;
+import pt.up.hs.project.web.rest.errors.BadRequestException;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -23,8 +25,6 @@ import java.util.List;
 public class ProjectPermissionResource {
 
     private final Logger log = LoggerFactory.getLogger(ProjectPermissionResource.class);
-
-    private static final String ENTITY_NAME = "projectProjectPermission";
 
     @Value("${jhipster.clientApp.name}")
     private String applicationName;
@@ -42,49 +42,58 @@ public class ProjectPermissionResource {
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new projectPermissionDTO, or with status {@code 400 (Bad Request)} if the projectPermission has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PostMapping("/permissions")
+    @PostMapping("/permissions/{user:^[_.@A-Za-z0-9-]*$}")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN')")
     public ResponseEntity<BulkProjectPermissionDTO> createProjectPermissions(
         @PathVariable("projectId") Long projectId,
+        @PathVariable("user") String user,
         @Valid @RequestBody BulkProjectPermissionDTO bulkProjectPermissionDTO
     ) throws URISyntaxException {
         log.debug("REST request to create project permissions {}", bulkProjectPermissionDTO);
-        if (bulkProjectPermissionDTO.getUser() == null) {
-            throw new BadRequestAlertException("User must be specified", ENTITY_NAME, "useridnotprovided");
-        }
         if (projectPermissionService.isOwner(bulkProjectPermissionDTO.getUser(), projectId)) {
-            throw new BadRequestAlertException("Cannot modify owner's permissions directly", ENTITY_NAME, "ownerpermissionsunmodifiable");
+            throw new BadRequestException(
+                "Cannot modify owner's permissions directly",
+                EntityNames.PERMISSION,
+                ErrorKeys.ERR_UNMODIFIABLE_OWNER_PERMISSION
+            );
         }
-        bulkProjectPermissionDTO.setProjectId(projectId);
-        BulkProjectPermissionDTO result = projectPermissionService.create(bulkProjectPermissionDTO);
-        return ResponseEntity.created(
-                new URI("/api/permissions/project/" + result.getProjectId() + "/user/" + result.getUser())
+        BulkProjectPermissionDTO result = projectPermissionService
+            .create(projectId, user, bulkProjectPermissionDTO);
+        return ResponseEntity
+            .created(
+                new URI("/api/permissions/project/" + result.getProjectId() + "/permissions/" + user)
             )
             .body(result);
     }
 
     /**
-     * {@code PUT  /permissions/user/:user} : Replaces existing permissions.
+     * {@code PUT  /permissions/:user} : Replaces existing permissions.
      *
      * @param bulkProjectPermissionDTO the new permissions to replace.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated projectPermissionDTO,
      * or with status {@code 400 (Bad Request)} if the projectPermissionDTO is not valid,
      * or with status {@code 500 (Internal Server Error)} if the projectPermissionDTO couldn't be updated.
      */
-    @PutMapping("/permissions/user/{user:^[_.@A-Za-z0-9-]*$}")
+    @PutMapping("/permissions/{user:^[_.@A-Za-z0-9-]*$}")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN')")
     public ResponseEntity<BulkProjectPermissionDTO> updateProjectPermission(
-        @PathVariable("user") String user,
         @PathVariable("projectId") Long projectId,
+        @PathVariable("user") String user,
         @Valid @RequestBody BulkProjectPermissionDTO bulkProjectPermissionDTO
     ) {
-        log.debug("REST request to replace project permissions {}", bulkProjectPermissionDTO);
+        log.debug(
+            "REST request to replace project permissions {}",
+            bulkProjectPermissionDTO
+        );
         if (projectPermissionService.isOwner(user, projectId)) {
-            throw new BadRequestAlertException("Cannot modify owner's permissions directly", ENTITY_NAME, "ownerpermissionsunmodifiable");
+            throw new BadRequestException(
+                "Cannot modify owner's permissions directly",
+                EntityNames.PERMISSION,
+                ErrorKeys.ERR_UNMODIFIABLE_OWNER_PERMISSION
+            );
         }
-        bulkProjectPermissionDTO.setUser(user);
-        bulkProjectPermissionDTO.setProjectId(projectId);
-        BulkProjectPermissionDTO result = projectPermissionService.replaceAll(bulkProjectPermissionDTO);
+        BulkProjectPermissionDTO result = projectPermissionService
+            .replace(projectId, user, bulkProjectPermissionDTO);
         return ResponseEntity.ok().body(result);
     }
 
@@ -101,13 +110,13 @@ public class ProjectPermissionResource {
         @PathVariable("projectId") Long projectId
     ) {
         log.debug("REST request to get permissions for project {}", projectId);
-        List<BulkProjectPermissionDTO> entityList = projectPermissionService.findAll(projectId);
-        return ResponseEntity.ok().body(entityList);
+        List<BulkProjectPermissionDTO> result = projectPermissionService.findAll(projectId);
+        return ResponseEntity.ok().body(result);
     }
 
     /**
-     * {@code GET  /permissions/user/:user/project/:projectId} : get
-     * all the permissions of user in project.
+     * {@code GET  /permissions/:user} : get all the permissions of user in
+     * project.
      *
      * @param projectId the ID of the project.
      * @param user the user login.
@@ -115,40 +124,45 @@ public class ProjectPermissionResource {
      *                                    list of permissions of user in project
      *                                    in body.
      */
-    @GetMapping("/permissions/user/{user:^[_.@A-Za-z0-9-]*$}/project/{projectId}")
+    @GetMapping("/permissions/{user:^[_.@A-Za-z0-9-]*$}")
     @PreAuthorize(
         "(hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN'))" +
-            " or (hasAnyRole('ROLE_USER', 'ROLE_GUEST', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal.username == user)")
+            " or (hasAnyRole('ROLE_USER', 'ROLE_GUEST', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal == user)")
     public ResponseEntity<BulkProjectPermissionDTO> getUserPermissionsInProject(
-        @PathVariable("user") String user,
-        @PathVariable("projectId") Long projectId
+        @PathVariable("projectId") Long projectId,
+        @PathVariable("user") String user
     ) {
         log.debug("REST request to get permissions of user {} in project {}", user, projectId);
-        BulkProjectPermissionDTO entityList = projectPermissionService.findAll(user, projectId);
+        BulkProjectPermissionDTO entityList = projectPermissionService.findAll(projectId, user);
         return ResponseEntity.ok().body(entityList);
     }
 
     /**
-     * {@code DELETE  /permissions/user/:user} : delete
-     * all the permissions of user in project.
+     * {@code DELETE  /permissions/:user} : delete all the permissions of user
+     * in project.
      *
      * @param projectId the ID of the project.
      * @param user the user login.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and empty body.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and
+     * empty body.
      */
-    @DeleteMapping("/permissions/user/{user:^[_.@A-Za-z0-9-]*$}")
+    @DeleteMapping("/permissions/{user:^[_.@A-Za-z0-9-]*$}")
     @PreAuthorize(
         "(hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN'))" +
-            " or (hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal.username == user)")
+            " or (hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal == user)")
     public ResponseEntity<Void> deleteUserPermissionsInProject(
         @PathVariable("user") String user,
         @PathVariable("projectId") Long projectId
     ) {
         log.debug("REST request to delete permissions of user {} in project {}", user, projectId);
         if (projectPermissionService.isOwner(user, projectId)) {
-            throw new BadRequestAlertException("Cannot modify owner's permissions directly", ENTITY_NAME, "ownerpermissionsunmodifiable");
+            throw new BadRequestException(
+                "Cannot modify owner's permissions directly",
+                EntityNames.PERMISSION,
+                ErrorKeys.ERR_UNMODIFIABLE_OWNER_PERMISSION
+            );
         }
-        projectPermissionService.deleteAll(user, projectId);
+        projectPermissionService.deleteAll(projectId, user);
         return ResponseEntity.noContent().build();
     }
 }

@@ -39,14 +39,14 @@ public class ProjectPermissionEvaluator implements PermissionEvaluator {
 
         if (targetDomainObject instanceof Project) { // permission check is only available for projects
             List<ProjectPermission> projectPermissions = projectPermissionRepository
-                .findAllByUserAndProjectId(
+                .findAllByIdUserAndIdProjectId(
                     userLogin.get(),
                     ((Project) targetDomainObject).getId()
                 );
 
             return projectPermissions.parallelStream()
                 .anyMatch(projectPermission ->
-                    projectPermission.getPermissionName()
+                    projectPermission.getPermission().getName()
                         .equals(permission.toString())
                 );
         }
@@ -69,14 +69,14 @@ public class ProjectPermissionEvaluator implements PermissionEvaluator {
         if (targetType.equals(Project.class.getCanonicalName())) {
             // permission check is only available for projects
             List<ProjectPermission> projectPermissions = projectPermissionRepository
-                .findAllByUserAndProjectId(
+                .findAllByIdUserAndIdProjectId(
                     userLogin.get(),
                     (Long) targetId
                 );
 
             return projectPermissions.parallelStream()
                 .anyMatch(projectPermission ->
-                    projectPermission.getPermissionName()
+                    projectPermission.getPermission().getName()
                         .equals(permission.toString())
                 );
         }

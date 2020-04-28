@@ -25,5 +25,5 @@ public interface LabelRepository extends JpaRepository<Label, Long> {
 
     Optional<Label> findByProjectIdAndId(@NotNull Long projectId, @NotNull Long id);
 
-    void deleteAllByProjectIdAndId(@NotNull Long projectId, @NotNull Long id);
+    void deleteByProjectIdAndId(@NotNull Long projectId, @NotNull Long id);
 }

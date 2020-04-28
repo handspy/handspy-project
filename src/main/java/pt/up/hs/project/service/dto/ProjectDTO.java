@@ -6,12 +6,16 @@ import pt.up.hs.project.domain.enumeration.ProjectStatus;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * A DTO for the {@link pt.up.hs.project.domain.Project} entity.
+ *
+ * @author José Carlos Paiva
  */
-@ApiModel(description = "The Project entity.\n\n@author José Carlos Paiva")
+@ApiModel(description = "The Project entity.")
 public class ProjectDTO extends AbstractAuditingDTO {
 
     private Long id;
@@ -51,6 +55,7 @@ public class ProjectDTO extends AbstractAuditingDTO {
     @ApiModelProperty(value = "Owner of the project", required = true)
     private String owner;
 
+    private Set<ProjectPermissionDTO> permissions = new HashSet<>();
 
     public Long getId() {
         return id;
@@ -98,6 +103,14 @@ public class ProjectDTO extends AbstractAuditingDTO {
 
     public void setOwner(String owner) {
         this.owner = owner;
+    }
+
+    public Set<ProjectPermissionDTO> getPermissions() {
+        return permissions;
+    }
+
+    public void setPermissions(Set<ProjectPermissionDTO> permissions) {
+        this.permissions = permissions;
     }
 
     @Override

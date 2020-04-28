@@ -6,14 +6,21 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.zalando.problem.Status;
+import pt.up.hs.project.constants.EntityNames;
+import pt.up.hs.project.constants.ErrorKeys;
+import pt.up.hs.project.domain.Label;
 import pt.up.hs.project.domain.Task;
+import pt.up.hs.project.repository.LabelRepository;
 import pt.up.hs.project.repository.TaskRepository;
-import pt.up.hs.project.service.LabelService;
 import pt.up.hs.project.service.TaskService;
 import pt.up.hs.project.service.dto.BulkImportResultDTO;
+import pt.up.hs.project.service.dto.LabelDTO;
 import pt.up.hs.project.service.dto.TaskDTO;
+import pt.up.hs.project.service.exceptions.ServiceException;
 import pt.up.hs.project.service.importer.dto.TaskCsvDTO;
 import pt.up.hs.project.service.importer.reader.CsvReader;
+import pt.up.hs.project.service.mapper.LabelMapper;
 import pt.up.hs.project.service.mapper.TaskMapper;
 
 import java.io.InputStream;
@@ -32,16 +39,19 @@ public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
 
-    private final LabelService labelService;
+    private final LabelRepository labelRepository;
+    private final LabelMapper labelMapper;
 
     public TaskServiceImpl(
         TaskRepository taskRepository,
         TaskMapper taskMapper,
-        LabelService labelService
+        LabelRepository labelRepository,
+        LabelMapper labelMapper
     ) {
         this.taskRepository = taskRepository;
         this.taskMapper = taskMapper;
-        this.labelService = labelService;
+        this.labelRepository = labelRepository;
+        this.labelMapper = labelMapper;
     }
 
     /**
@@ -56,6 +66,7 @@ public class TaskServiceImpl implements TaskService {
         log.debug("Request to save Task {} from project {}", taskDTO, projectId);
         Task task = taskMapper.toEntity(taskDTO);
         task.setProjectId(projectId);
+        populateAndSaveLabels(projectId, task);
         task = taskRepository.save(task);
         return taskMapper.toDto(task);
     }
@@ -76,6 +87,7 @@ public class TaskServiceImpl implements TaskService {
                     .map(taskDTO -> {
                         Task task = taskMapper.toEntity(taskDTO);
                         task.setProjectId(projectId);
+                        populateAndSaveLabels(projectId, task);
                         return task;
                     })
                     .collect(Collectors.toList())
@@ -88,16 +100,16 @@ public class TaskServiceImpl implements TaskService {
      * Get all the tasks.
      *
      * @param projectId the ID of the project containing the tasks.
-     * @param search the search string.
-     * @param labelIds the ids of the labels to filter by.
+     * @param search    the search string.
+     * @param labels    the ids of the labels to filter by.
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<TaskDTO> findAll(Long projectId, String search, Long[] labelIds, Pageable pageable) {
+    public Page<TaskDTO> findAll(Long projectId, String search, List<Long> labels, Pageable pageable) {
         log.debug("Request to get all Tasks from project {}", projectId);
-        return taskRepository.findAllByProjectId(projectId, search, labelIds, pageable)
+        return taskRepository.findAllByProjectId(projectId, search, labels, pageable)
             .map(taskMapper::toDto);
     }
 
@@ -105,17 +117,17 @@ public class TaskServiceImpl implements TaskService {
      * Get all the tasks with eager load of many-to-many relationships.
      *
      * @param projectId the ID of the project containing the tasks.
-     * @param search the search string.
-     * @param labelIds the ids of the labels to filter by.
+     * @param search    the search string.
+     * @param labels    the ids of the labels to filter by.
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<TaskDTO> findAllWithEagerRelationships(Long projectId, String search, Long[] labelIds, Pageable pageable) {
+    public Page<TaskDTO> findAllWithEagerRelationships(Long projectId, String search, List<Long> labels, Pageable pageable) {
         log.debug("Request to get all Tasks with eager relationships from project {}", projectId);
         return taskRepository
-            .findAllWithEagerRelationships(projectId, search, labelIds, pageable)
+            .findAllWithEagerRelationships(projectId, search, labels, pageable)
             .map(taskMapper::toDto);
     }
 
@@ -123,15 +135,15 @@ public class TaskServiceImpl implements TaskService {
      * Count the tasks with eager load of many-to-many relationships.
      *
      * @param projectId the ID of the project containing the tasks.
-     * @param search the search string.
-     * @param labelIds the ids of the labels to filter by.
+     * @param search    the search string.
+     * @param labels    the ids of the labels to filter by.
      * @return the number of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public long count(Long projectId, String search, Long[] labelIds) {
+    public long count(Long projectId, String search, List<Long> labels) {
         log.debug("Request to count Tasks from project {}", projectId);
-        return taskRepository.count(projectId, search, labelIds);
+        return taskRepository.count(projectId, search, labels);
     }
 
     /**
@@ -164,38 +176,54 @@ public class TaskServiceImpl implements TaskService {
         Long projectId, InputStream is, String sep, String arraySep, boolean useHeader
     ) {
         log.debug("Request to import Tasks from CSV to project {}", projectId);
+
         long startTime = new Date().getTime();
+
         CsvReader<TaskCsvDTO> reader = CsvReader.fromInputStream(
             TaskCsvDTO.class, is, sep, useHeader
         );
-        List<TaskDTO> taskDTOs = reader.getAll().stream().map(taskCsvDTO -> {
+
+        List<Task> tasks = reader.getAll().stream().map(taskCsv -> {
             try {
-                TaskDTO taskDTO = new TaskDTO();
-                taskDTO.setProjectId(projectId);
-                taskDTO.setName(taskCsvDTO.getName());
-                taskDTO.setStartDate(taskCsvDTO.getStartDate());
-                taskDTO.setEndDate(taskCsvDTO.getEndDate());
-                taskDTO.setDescription(taskCsvDTO.getDescription());
-                if (taskCsvDTO.getLabels() != null) {
-                    taskDTO.setLabels(
-                        Arrays.stream(taskCsvDTO.getLabels().split(arraySep))
+                Task task = new Task();
+                task.setProjectId(projectId);
+                task.setName(taskCsv.getName());
+                task.setStartDate(taskCsv.getStartDate());
+                task.setEndDate(taskCsv.getEndDate());
+                task.setDescription(taskCsv.getDescription());
+                if (taskCsv.getLabels() != null) {
+                    task.setLabels(
+                        Arrays.stream(taskCsv.getLabels().split(arraySep))
                             .map(String::trim)
                             .filter(name -> !name.isEmpty())
-                            .map(name -> labelService.createIfNameNotExists(projectId, name))
+                            .map(name -> {
+                                Optional<Label> labelOpt = labelRepository.findByProjectIdAndName(projectId, name);
+                                if (labelOpt.isPresent()) {
+                                    return labelOpt.get();
+                                } else {
+                                    Label label = new Label();
+                                    label.setProjectId(projectId);
+                                    label.setName(name);
+                                    return labelRepository.saveAndFlush(label);
+                                }
+                            })
                             .collect(Collectors.toSet())
                     );
                 }
-                return taskDTO;
+                return task;
             } catch (Exception e) {
                 return null;
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());
-        List<TaskDTO> savedTaskDTOs = saveAll(projectId, taskDTOs);
+
+        List<Task> savedTasks = taskRepository.saveAll(tasks);
+
         long endTime = new Date().getTime();
+
         return new BulkImportResultDTO<>(
-            savedTaskDTOs.size(),
-            reader.getExceptionLines().length + (taskDTOs.size() - savedTaskDTOs.size()),
-            savedTaskDTOs,
+            savedTasks.size(),
+            reader.getExceptionLines().length + (tasks.size() - savedTasks.size()),
+            savedTasks.parallelStream().map(taskMapper::toDto).collect(Collectors.toList()),
             endTime - startTime
         );
     }
@@ -209,6 +237,35 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public void delete(Long projectId, Long id) {
         log.debug("Request to delete Task {} from project {}", id, projectId);
-        taskRepository.deleteAllByProjectIdAndId(projectId, id);
+        Optional<Task> taskOpt = taskRepository.findByProjectIdAndId(projectId, id);
+        if (taskOpt.isPresent()) {
+            Task task = taskOpt.get();
+            task.getLabels().parallelStream().forEach(task::removeLabels);
+        }
+        taskRepository.deleteByProjectIdAndId(projectId, id);
+    }
+
+    private void populateAndSaveLabels(Long projectId, Task task) {
+        Set<Label> labels = new HashSet<>();
+        for (Label label : task.getLabels()) {
+            label.setProjectId(projectId);
+            if (label.getId() != null) { // existing labels
+                Optional<Label> labelOpt =
+                    labelRepository.findByProjectIdAndId(projectId, label.getId());
+                if (!labelOpt.isPresent()) {
+                    throw new ServiceException(
+                        Status.BAD_REQUEST,
+                        EntityNames.TASK,
+                        ErrorKeys.ERR_RELATED_ENTITY_NOT_FOUND,
+                        "The related label does not exist."
+                    );
+                }
+                labels.add(labelOpt.get().addTasks(task));
+            } else { // new labels
+                labelRepository.save(label);
+                labels.add(label.addTasks(task));
+            }
+        }
+        task.setLabels(labels);
     }
 }

@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.up.hs.project.domain.Project;
 import pt.up.hs.project.domain.ProjectPermission;
 import pt.up.hs.project.repository.ProjectPermissionRepository;
 import pt.up.hs.project.service.ProjectPermissionService;
@@ -47,27 +46,25 @@ public class ProjectPermissionServiceImpl implements ProjectPermissionService {
         this.projectService = projectService;
     }
 
+    /**
+     * Create permissions of user in a project.
+     *
+     * @param projectId ID of the project to manage.
+     * @param user User login to manage.
+     * @param bulkProjectPermissionDTO {@link BulkProjectPermissionDTO} permissions to save.
+     * @return {@link BulkProjectPermissionDTO} permissions of user in a project.
+     */
     @Override
-    public BulkProjectPermissionDTO replaceAll(BulkProjectPermissionDTO bulkProjectPermissionDTO) {
-        log.debug(
-            "Request to replace permissions of user {} in project {} by {}",
-            bulkProjectPermissionDTO.getUser(),
-            bulkProjectPermissionDTO.getProjectId(),
-            bulkProjectPermissionDTO.getPermissions()
-        );
-        deleteAll(bulkProjectPermissionDTO.getUser(), bulkProjectPermissionDTO.getProjectId());
-        return create(bulkProjectPermissionDTO);
-    }
-
-    @Override
-    public BulkProjectPermissionDTO create(BulkProjectPermissionDTO bulkProjectPermissionDTO) {
+    public BulkProjectPermissionDTO create(
+        Long projectId, String user,
+        BulkProjectPermissionDTO bulkProjectPermissionDTO
+    ) {
         log.debug(
             "Request to create permissions {} for user {} in project {}",
-            bulkProjectPermissionDTO.getUser(),
-            bulkProjectPermissionDTO.getProjectId(),
-            bulkProjectPermissionDTO.getPermissions()
+            bulkProjectPermissionDTO.getPermissions(), user, projectId
         );
-
+        bulkProjectPermissionDTO.setProjectId(projectId);
+        bulkProjectPermissionDTO.setUser(user);
         List<ProjectPermissionDTO> projectPermissionDTOs = projectPermissionRepository
             .saveAll(
                 bulkProjectPermissionDTOToProjectPermissionDTOs(bulkProjectPermissionDTO)
@@ -80,18 +77,41 @@ public class ProjectPermissionServiceImpl implements ProjectPermissionService {
                 .collect(Collectors.toList());
 
         return projectPermissionsToBulkProjectPermissionDTO(
-            bulkProjectPermissionDTO.getUser(),
-            bulkProjectPermissionDTO.getProjectId(),
-            projectPermissionDTOs
+            projectId, user, projectPermissionDTOs
         );
     }
 
+    /**
+     * Save permissions of user in a project, replacing current permissions.
+     *
+     * @param projectId ID of the project to manage.
+     * @param user User login to manage.
+     * @param bulkProjectPermissionDTO {@link BulkProjectPermissionDTO} permissions to save.
+     * @return {@link BulkProjectPermissionDTO} permissions of user in a project.
+     */
     @Override
+    public BulkProjectPermissionDTO replace(Long projectId, String user, BulkProjectPermissionDTO bulkProjectPermissionDTO) {
+        log.debug(
+            "Request to replace permissions of user {} in project {} by {}",
+            user, projectId, bulkProjectPermissionDTO.getPermissions()
+        );
+        deleteAll(projectId, user);
+        return create(projectId, user, bulkProjectPermissionDTO);
+    }
+
+    /**
+     * Find all permissions of user.
+     *
+     * @param user User login to manage.
+     * @return {@link List} list of permissions of user.
+     */
+    @Override
+    @Transactional(readOnly = true)
     public List<BulkProjectPermissionDTO> findAll(String user) {
         log.debug("Request to find all permissions of user {}", user);
 
         List<ProjectPermissionDTO> projectPermissionDTOs =
-            projectPermissionRepository.findAllByUser(user)
+            projectPermissionRepository.findAllByIdUser(user)
                 .parallelStream()
                 .map(projectPermissionMapper::toDto)
                 .collect(Collectors.toList());
@@ -99,16 +119,23 @@ public class ProjectPermissionServiceImpl implements ProjectPermissionService {
         return projectPermissionDTOs.parallelStream()
             .collect(Collectors.groupingBy(ProjectPermissionDTO::getProjectId))
             .entrySet().parallelStream()
-            .map(e -> projectPermissionsToBulkProjectPermissionDTO(user, e.getKey(), e.getValue()))
+            .map(e -> projectPermissionsToBulkProjectPermissionDTO(e.getKey(), user, e.getValue()))
             .collect(Collectors.toList());
     }
 
+    /**
+     * Find all permissions of project.
+     *
+     * @param projectId {@link Long} ID of the project.
+     * @return {@link List} list of permissions of users in project.
+     */
     @Override
+    @Transactional(readOnly = true)
     public List<BulkProjectPermissionDTO> findAll(Long projectId) {
         log.debug("Request to find all permissions in project {}", projectId);
 
         List<ProjectPermissionDTO> projectPermissionDTOs =
-            projectPermissionRepository.findAllByProjectId(projectId)
+            projectPermissionRepository.findAllByIdProjectId(projectId)
                 .parallelStream()
                 .map(projectPermissionMapper::toDto)
                 .collect(Collectors.toList());
@@ -116,43 +143,67 @@ public class ProjectPermissionServiceImpl implements ProjectPermissionService {
         return projectPermissionDTOs.parallelStream()
             .collect(Collectors.groupingBy(ProjectPermissionDTO::getUser))
             .entrySet().parallelStream()
-            .map(e -> projectPermissionsToBulkProjectPermissionDTO(e.getKey(), projectId, e.getValue()))
+            .map(e -> projectPermissionsToBulkProjectPermissionDTO(projectId, e.getKey(), e.getValue()))
             .collect(Collectors.toList());
     }
 
+    /**
+     * Find all permissions of user in project.
+     *
+     * @param user {@link String} user login.
+     * @param projectId {@link Long} ID of the project.
+     * @return {@link ProjectPermissionDTO} permissions of user in a project.
+     */
     @Override
-    public BulkProjectPermissionDTO findAll(String user, Long projectId) {
+    @Transactional(readOnly = true)
+    public BulkProjectPermissionDTO findAll(Long projectId, String user) {
         log.debug("Request to find all permissions of user {} in project {}", user, projectId);
 
         List<ProjectPermissionDTO> projectPermissionDTOs =
-            projectPermissionRepository.findAllByUserAndProjectId(user, projectId)
+            projectPermissionRepository.findAllByIdUserAndIdProjectId(user, projectId)
                 .parallelStream()
                 .map(projectPermissionMapper::toDto)
                 .collect(Collectors.toList());
 
-        return projectPermissionsToBulkProjectPermissionDTO(user, projectId, projectPermissionDTOs);
+        return projectPermissionsToBulkProjectPermissionDTO(projectId, user, projectPermissionDTOs);
     }
 
+    /**
+     * Delete permissions of user in a project.
+     *
+     * @param projectId ID of the project to manage.
+     * @param user User login to manage.
+     * @param bulkProjectPermissionDTO {@link BulkProjectPermissionDTO} permissions to delete.
+     */
     @Override
-    public void delete(BulkProjectPermissionDTO bulkProjectPermissionDTO) {
+    public void delete(Long projectId, String user, BulkProjectPermissionDTO bulkProjectPermissionDTO) {
         log.debug("Request to delete permissions {}", bulkProjectPermissionDTO);
-        projectPermissionRepository.deleteAllByUserAndProjectIdAndPermissionNameIn(
-            bulkProjectPermissionDTO.getUser(),
-            bulkProjectPermissionDTO.getProjectId(),
-            bulkProjectPermissionDTO.getPermissions()
+        projectPermissionRepository.deleteAllByIdUserAndIdProjectIdAndIdPermissionNameIn(
+            user, projectId, bulkProjectPermissionDTO.getPermissions()
         );
     }
 
+    /**
+     * Delete permissions of user in a project.
+     *
+     * @param projectId ID of the project to manage.
+     * @param user User login to manage.
+     */
+    @Override
+    public void deleteAll(Long projectId, String user) {
+        log.debug("Request to delete permissions of user {} in project {}", user, projectId);
+        projectPermissionRepository.deleteAllByIdUserAndIdProjectId(user, projectId);
+    }
+
+    /**
+     * Delete permissions of project.
+     *
+     * @param projectId ID of the project to manage.
+     */
     @Override
     public void deleteAll(Long projectId) {
         log.debug("Request to delete permissions of project {}", projectId);
-        projectPermissionRepository.deleteAllByProjectId(projectId);
-    }
-
-    @Override
-    public void deleteAll(String user, Long projectId) {
-        log.debug("Request to delete permissions of user {} in project {}", user, projectId);
-        projectPermissionRepository.deleteAllByUserAndProjectId(user, projectId);
+        projectPermissionRepository.deleteAllByIdProjectId(projectId);
     }
 
     /**
@@ -192,13 +243,13 @@ public class ProjectPermissionServiceImpl implements ProjectPermissionService {
     /**
      * Convert list of {@link ProjectPermissionDTO} to {@link BulkProjectPermissionDTO}.
      *
-     * @param user User login.
      * @param projectId ID of the project.
+     * @param user User login.
      * @param projectPermissionDTOs list of {@link ProjectPermissionDTO}.
      * @return {@link BulkProjectPermissionDTO} result.
      */
     private BulkProjectPermissionDTO projectPermissionsToBulkProjectPermissionDTO(
-        String user, Long projectId,
+        Long projectId, String user,
         List<ProjectPermissionDTO> projectPermissionDTOs
     ) {
         BulkProjectPermissionDTO bulkProjectPermissionDTO = new BulkProjectPermissionDTO();

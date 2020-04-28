@@ -58,12 +58,12 @@ public class Label implements Serializable {
     @NotNull
     private Long projectId;
 
-    @ManyToMany(mappedBy = "labels", fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "labels")
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     @JsonIgnore
     private Set<Participant> participants = new HashSet<>();
 
-    @ManyToMany(mappedBy = "labels", fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "labels")
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     @JsonIgnore
     private Set<Task> tasks = new HashSet<>();
@@ -125,7 +125,7 @@ public class Label implements Serializable {
     }
 
     public Label participants(Set<Participant> participants) {
-        this.participants = participants;
+        setParticipants(participants);
         return this;
     }
 
@@ -143,6 +143,11 @@ public class Label implements Serializable {
 
     public void setParticipants(Set<Participant> participants) {
         this.participants = participants;
+        if (this.participants != null) {
+            for (Participant participant: this.participants) {
+                participant.getLabels().add(this);
+            }
+        }
     }
 
     public Set<Task> getTasks() {
@@ -150,7 +155,7 @@ public class Label implements Serializable {
     }
 
     public Label tasks(Set<Task> tasks) {
-        this.tasks = tasks;
+        setTasks(tasks);
         return this;
     }
 
@@ -168,6 +173,11 @@ public class Label implements Serializable {
 
     public void setTasks(Set<Task> tasks) {
         this.tasks = tasks;
+        if (this.tasks != null) {
+            for (Task task: this.tasks) {
+                task.getLabels().add(this);
+            }
+        }
     }
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here, do not remove
 

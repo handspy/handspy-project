@@ -2,9 +2,11 @@ package pt.up.hs.project.web.rest;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.multipart.MultipartFile;
+import pt.up.hs.project.constants.EntityNames;
+import pt.up.hs.project.constants.ErrorKeys;
 import pt.up.hs.project.service.ParticipantService;
 import pt.up.hs.project.service.dto.BulkImportResultDTO;
-import pt.up.hs.project.web.rest.errors.BadRequestAlertException;
+import pt.up.hs.project.web.rest.errors.BadRequestException;
 import pt.up.hs.project.service.dto.ParticipantDTO;
 
 import io.github.jhipster.web.util.HeaderUtil;
@@ -37,8 +39,6 @@ public class ParticipantResource {
 
     private final Logger log = LoggerFactory.getLogger(ParticipantResource.class);
 
-    private static final String ENTITY_NAME = "projectParticipant";
-
     @Value("${jhipster.clientApp.name}")
     private String applicationName;
 
@@ -64,12 +64,12 @@ public class ParticipantResource {
     ) throws URISyntaxException {
         log.debug("REST request to create Participant {} in project {}", participantDTO, projectId);
         if (participantDTO.getId() != null) {
-            throw new BadRequestAlertException("A new participant cannot already have an ID", ENTITY_NAME, "idexists");
+            throw new BadRequestException("A new participant cannot already have an ID", EntityNames.PARTICIPANT, ErrorKeys.ERR_ID_EXISTS);
         }
         participantDTO.setProjectId(projectId);
         ParticipantDTO result = participantService.save(projectId, participantDTO);
         return ResponseEntity.created(new URI("/api/projects/" + projectId + "/participants/" + result.getId()))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, EntityNames.PARTICIPANT, result.getId().toString()))
             .body(result);
     }
 
@@ -90,11 +90,11 @@ public class ParticipantResource {
     ) {
         log.debug("REST request to update Participant {} in project {}", participantDTO, projectId);
         if (participantDTO.getId() == null) {
-            throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
+            throw new BadRequestException("Invalid id", EntityNames.PARTICIPANT, ErrorKeys.ERR_ID_NULL);
         }
         ParticipantDTO result = participantService.save(projectId, participantDTO);
         return ResponseEntity.ok()
-            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, participantDTO.getId().toString()))
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, EntityNames.PARTICIPANT, participantDTO.getId().toString()))
             .body(result);
     }
 
@@ -111,9 +111,8 @@ public class ParticipantResource {
     @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<List<ParticipantDTO>> getAllParticipants(
         @PathVariable("projectId") Long projectId,
-        @RequestParam(value = "search", required = false) String search,
-        @RequestParam(value = "labels", required = false) Long[] labels,
-        /*ParticipantCriteria criteria,*/
+        @RequestParam(value = "search", required = false, defaultValue = "") String search,
+        @RequestParam(value = "labels", required = false) List<Long> labels,
         Pageable pageable
     ) {
         log.debug("REST request to get Participants in project {}", projectId);
@@ -134,8 +133,8 @@ public class ParticipantResource {
     @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<Long> countParticipants(
         @PathVariable("projectId") Long projectId,
-        @RequestParam(value = "search", required = false) String search,
-        @RequestParam(value = "labels", required = false) Long[] labels
+        @RequestParam(value = "search", required = false, defaultValue = "") String search,
+        @RequestParam(value = "labels", required = false) List<Long> labels
     ) {
         log.debug("REST request to count Participants in project {}", projectId);
         return ResponseEntity.ok().body(participantService.count(projectId, search, labels));
@@ -226,7 +225,7 @@ public class ParticipantResource {
         log.debug("REST request to delete Participant {} in project {}", id, projectId);
         participantService.delete(projectId, id);
         return ResponseEntity.noContent().headers(
-            HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())
+            HeaderUtil.createEntityDeletionAlert(applicationName, true, EntityNames.PARTICIPANT, id.toString())
         ).build();
     }
 }

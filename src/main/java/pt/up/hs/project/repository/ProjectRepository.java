@@ -14,49 +14,40 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
- * Spring Data  repository for the Project entity.
+ * Spring Data repository for the Project entity.
  */
 @SuppressWarnings("unused")
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     @Query(
-        value = "select distinct project from Project project inner join ProjectPermission permission " +
-            "on project.id = permission.projectId " +
-            "where permission.user = ?#{principal?.username} and permission.permissionName = '" + PermissionsConstants.READ + "'",
-        countQuery = "select count(distinct project) from Project project inner join ProjectPermission permission " +
-            "on project.id = permission.projectId " +
-            "where permission.user = ?#{principal?.username} and permission.permissionName = '" + PermissionsConstants.READ + "'"
+        value = "select distinct project from Project project join project.permissions permission " +
+            "where permission.id.user = ?#{principal} and permission.id.permission.name = '" + PermissionsConstants.READ + "'",
+        countProjection = "distinct project.id"
     )
     @Nonnull Page<Project> findAll(@Nonnull Pageable pageable);
 
     @Query(
-        value = "select distinct project from Project project inner join ProjectPermission permission " +
-            "on project.id = permission.projectId where " +
-            "permission.user = ?#{principal?.username} and permission.permissionName = '" + PermissionsConstants.READ + "' " +
+        value = "select distinct project from Project project join project.permissions permission " +
+            "where permission.id.user = ?#{principal} and permission.id.permission.name = '" + PermissionsConstants.READ + "' " +
             "and (coalesce(:statuses) is null or project.status in (:statuses)) " +
-            "and (:search is null or project.name like '%' || :search || '%' or project.description like '%' || :search || '%')",
-        countQuery = "select count(distinct project) from Project project inner join ProjectPermission permission " +
-            "on project.id = permission.projectId where " +
-            "permission.user = ?#{principal?.username} and permission.permissionName = '" + PermissionsConstants.READ + "' " +
-            "and (coalesce(:statuses) is null or project.status in (:statuses)) " +
-            "and (:search is null or project.name like '%' || :search || '%' or project.description like '%' || :search || '%')"
+            "and ((:search is null or :search = '') or (lower(project.name) like ('%' || lower(:search) || '%')) or (lower(project.description) like ('%' || lower(:search) || '%')))",
+        countProjection = "distinct project.id"
     )
     @Nonnull Page<Project> findAllByStatusAndSearch(
-        @Param("statuses") List<ProjectStatus> statuses,
-        @Param("search") String search,
+        @Param("statuses") @Nonnull List<ProjectStatus> statuses,
+        @Param("search") @Nonnull String search,
         Pageable pageable
     );
 
     @Query(
-        value = "select count(distinct project) from Project project inner join ProjectPermission permission " +
-            "on project.id = permission.projectId where " +
-            "permission.user = ?#{principal?.username} and permission.permissionName = '" + PermissionsConstants.READ + "' " +
+        value = "select count(distinct project) from Project project join project.permissions permission " +
+            "where permission.id.user = ?#{principal} and permission.id.permission.name = '" + PermissionsConstants.READ + "' " +
             "and (coalesce(:statuses) is null or project.status in (:statuses)) " +
-            "and (:search is null or project.name like '%' || :search || '%' or project.description like '%' || :search || '%')"
+            "and ((:search is null or :search = '') or (lower(project.name) like ('%' || lower(:search) || '%')) or (lower(project.description) like ('%' || lower(:search) || '%')))"
     )
     @Nonnull Long countByStatusAndSearch(
-        @Param("statuses") List<ProjectStatus> statuses,
-        @Param("search") String search
+        @Param("statuses") @Nonnull List<ProjectStatus> statuses,
+        @Param("search") @Nonnull String search
     );
 }

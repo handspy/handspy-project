@@ -1,12 +1,5 @@
 package pt.up.hs.project.web.rest;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-import pt.up.hs.project.domain.enumeration.ProjectStatus;
-import pt.up.hs.project.security.SecurityUtils;
-import pt.up.hs.project.service.ProjectService;
-import pt.up.hs.project.web.rest.errors.BadRequestAlertException;
-import pt.up.hs.project.service.dto.ProjectDTO;
-
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.PaginationUtil;
 import io.github.jhipster.web.util.ResponseUtil;
@@ -16,9 +9,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import pt.up.hs.project.constants.EntityNames;
+import pt.up.hs.project.constants.ErrorKeys;
+import pt.up.hs.project.domain.enumeration.ProjectStatus;
+import pt.up.hs.project.service.ProjectService;
+import pt.up.hs.project.service.dto.ProjectDTO;
+import pt.up.hs.project.web.rest.errors.BadRequestException;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -34,8 +34,6 @@ import java.util.Optional;
 public class ProjectResource {
 
     private final Logger log = LoggerFactory.getLogger(ProjectResource.class);
-
-    private static final String ENTITY_NAME = "projectProject";
 
     @Value("${jhipster.clientApp.name}")
     private String applicationName;
@@ -58,18 +56,11 @@ public class ProjectResource {
     public ResponseEntity<ProjectDTO> createProject(@Valid @RequestBody ProjectDTO projectDTO) throws URISyntaxException {
         log.debug("REST request to save Project : {}", projectDTO);
         if (projectDTO.getId() != null) {
-            throw new BadRequestAlertException("A new project cannot already have an ID", ENTITY_NAME, "idexists");
-        }
-        if (projectDTO.getOwner() == null) {
-            Optional<String> login = SecurityUtils.getCurrentUserLogin();
-            if (!login.isPresent()) {
-                throw new BadRequestAlertException("Owner not provided", ENTITY_NAME, "ownermissing");
-            }
-            projectDTO.setOwner(login.get());
+            throw new BadRequestException("A new project cannot already have an ID", EntityNames.PROJECT, ErrorKeys.ERR_ID_EXISTS);
         }
         ProjectDTO result = projectService.save(projectDTO);
         return ResponseEntity.created(new URI("/api/projects/" + result.getId()))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, EntityNames.PROJECT, result.getId().toString()))
             .body(result);
     }
 
@@ -80,18 +71,17 @@ public class ProjectResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated projectDTO,
      * or with status {@code 400 (Bad Request)} if the projectDTO is not valid,
      * or with status {@code 500 (Internal Server Error)} if the projectDTO couldn't be updated.
-     * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/projects")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectDTO.id, 'pt.up.hs.project.domain.Project', 'ADMIN')")
-    public ResponseEntity<ProjectDTO> updateProject(@Valid @RequestBody ProjectDTO projectDTO) throws URISyntaxException {
+    public ResponseEntity<ProjectDTO> updateProject(@Valid @RequestBody ProjectDTO projectDTO) {
         log.debug("REST request to update Project : {}", projectDTO);
         if (projectDTO.getId() == null) {
-            throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
+            throw new BadRequestException("Invalid id", EntityNames.PROJECT, ErrorKeys.ERR_ID_NULL);
         }
         ProjectDTO result = projectService.save(projectDTO);
         return ResponseEntity.ok()
-            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, projectDTO.getId().toString()))
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, EntityNames.PROJECT, projectDTO.getId().toString()))
             .body(result);
     }
 
@@ -106,7 +96,7 @@ public class ProjectResource {
     @GetMapping("/projects")
     @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN')")
     public ResponseEntity<List<ProjectDTO>> getAllProjects(
-        @RequestParam(value = "search", required = false) String search,
+        @RequestParam(value = "search", required = false, defaultValue = "") String search,
         @RequestParam(value = "status", required = false) List<ProjectStatus> statuses,
         Pageable pageable
     ) {
@@ -127,7 +117,7 @@ public class ProjectResource {
     @GetMapping("/projects/count")
     @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN')")
     public ResponseEntity<Long> countProjects(
-        @RequestParam(value = "search", required = false) String search,
+        @RequestParam(value = "search", required = false, defaultValue = "") String search,
         @RequestParam(value = "status", required = false) List<ProjectStatus> statuses
     ) {
         log.debug("REST request to count projects");
@@ -160,7 +150,7 @@ public class ProjectResource {
         log.debug("REST request to delete Project : {}", id);
         projectService.delete(id);
         return ResponseEntity.noContent()
-            .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString()))
+            .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, EntityNames.PROJECT, id.toString()))
             .build();
     }
 }

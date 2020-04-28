@@ -11,20 +11,18 @@ import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.format.support.FormattingConversionService;
 import org.springframework.http.MediaType;
 
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeParseException;
-import java.util.List;
-
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -59,6 +57,13 @@ public final class TestUtil {
         return mapper.writeValueAsBytes(object);
     }
 
+    /**
+     * Read a file from the resources' folder.
+     *
+     * @param path Path to file.
+     * @return byte[] bytes from file read
+     * @throws Exception if an exception occurs while reading file.
+     */
     public static byte[] readFileFromResourcesFolder(String path) throws Exception {
         URL url = Thread.currentThread().getContextClassLoader().getResource(path);
         if (url == null) {

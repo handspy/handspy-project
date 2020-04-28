@@ -1,5 +1,6 @@
 package pt.up.hs.project.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -13,7 +14,9 @@ import java.util.Set;
 import pt.up.hs.project.domain.enumeration.ProjectStatus;
 
 /**
- * The Project entity.\n\n@author José Carlos Paiva
+ * The Project entity.
+ *
+ * @author José Carlos Paiva
  */
 @Entity
 @Table(name = "project")
@@ -57,23 +60,26 @@ public class Project extends AbstractAuditingEntity {
     private String owner;
 
     /**
-     * Color of the project
+     * Color of the project.
      */
     @NotNull
     @Size(max = 20)
     @Column(name = "color", nullable = false, length = 20)
     private String color;
 
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "id.project", orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    @JsonIgnoreProperties("project")
     private Set<ProjectPermission> permissions = new HashSet<>();
 
-    @OneToMany(mappedBy = "project")
+    @OneToMany(mappedBy = "project", orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    @JsonIgnoreProperties("project")
     private Set<Task> tasks = new HashSet<>();
 
-    @OneToMany(mappedBy = "project")
+    @OneToMany(mappedBy = "project", orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    @JsonIgnoreProperties("project")
     private Set<Participant> participants = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
@@ -210,14 +216,14 @@ public class Project extends AbstractAuditingEntity {
     }
 
     public Project addPermissions(ProjectPermission permission) {
+        permission.setProject(this);
         this.permissions.add(permission);
-        permission.setProjectId(this.id);
         return this;
     }
 
     public Project removePermissions(ProjectPermission permission) {
         this.permissions.remove(permission);
-        permission.setProjectId(null);
+        permission.setProject(null);
         return this;
     }
 

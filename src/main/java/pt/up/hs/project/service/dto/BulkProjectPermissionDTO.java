@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -35,7 +36,7 @@ public class BulkProjectPermissionDTO implements Serializable {
      * The permission of this entry.
      */
     @ApiModelProperty(value = "The permissions of this user in this project.")
-    private List<String> permissions;
+    private List<String> permissions = new ArrayList<>();
 
     public BulkProjectPermissionDTO() {
     }

@@ -1,16 +1,14 @@
 package pt.up.hs.project.service.impl;
 
-import pt.up.hs.project.service.LabelService;
-import pt.up.hs.project.domain.Label;
-import pt.up.hs.project.repository.LabelRepository;
-import pt.up.hs.project.service.dto.LabelDTO;
-import pt.up.hs.project.service.mapper.LabelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.up.hs.project.domain.Label;
+import pt.up.hs.project.repository.LabelRepository;
+import pt.up.hs.project.service.LabelService;
+import pt.up.hs.project.service.dto.LabelDTO;
+import pt.up.hs.project.service.mapper.LabelMapper;
 
 import java.util.List;
 import java.util.Optional;
@@ -136,6 +134,12 @@ public class LabelServiceImpl implements LabelService {
     @Override
     public void delete(Long projectId, Long id) {
         log.debug("Request to delete Label {} from project {}", id, projectId);
-        labelRepository.deleteAllByProjectIdAndId(projectId, id);
+        Optional<Label> labelOpt = labelRepository.findByProjectIdAndId(projectId, id);
+        if (labelOpt.isPresent()) {
+            Label label = labelOpt.get();
+            label.getTasks().parallelStream().forEach(label::removeTasks);
+            label.getParticipants().parallelStream().forEach(label::removeParticipants);
+        }
+        labelRepository.deleteByProjectIdAndId(projectId, id);
     }
 }

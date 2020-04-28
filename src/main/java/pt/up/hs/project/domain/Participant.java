@@ -88,13 +88,14 @@ public class Participant extends AbstractAuditingEntity {
     private Long projectId;
 
     @ManyToMany(
-        fetch = FetchType.LAZY,
-        cascade = { CascadeType.MERGE }
+        fetch = FetchType.EAGER
+    )
+    @JoinTable(
+        name = "participant_labels",
+        joinColumns = @JoinColumn(name = "participant_id"),
+        inverseJoinColumns = @JoinColumn(name = "labels_id")
     )
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
-    @JoinTable(name = "participant_labels",
-               joinColumns = @JoinColumn(name = "participant_id", referencedColumnName = "id"),
-               inverseJoinColumns = @JoinColumn(name = "labels_id", referencedColumnName = "id"))
     private Set<Label> labels = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
@@ -220,6 +221,11 @@ public class Participant extends AbstractAuditingEntity {
 
     public Participant labels(Set<Label> labels) {
         this.labels = labels;
+        if (this.labels != null) {
+            for (Label label: this.labels) {
+                label.getParticipants().add(this);
+            }
+        }
         return this;
     }
 

@@ -3,11 +3,9 @@ package pt.up.hs.project.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import pt.up.hs.project.domain.Label;
 import pt.up.hs.project.domain.Task;
 
 import javax.annotation.Nonnull;
@@ -21,58 +19,53 @@ import java.util.Optional;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
+    String SELECT_BY_PROJECT_ID_SEARCH_LABELS =
+        "select distinct task.id from Task task left join task.labels label " +
+        "where task.projectId = :projectId " +
+        "and ((:search is null or :search = '') or (lower(task.name) like " +
+            "('%' || lower(:search) || '%')) or (lower(task.description) like " +
+            "('%' || lower(:search) || '%'))) " +
+        "and (coalesce(:labelIds) is null or label.id in (:labelIds))";
+
+    String COUNT_BY_PROJECT_ID_SEARCH_LABELS =
+        "select count(distinct task.id) from Task task left join task.labels label " +
+            "where task.projectId = :projectId " +
+            "and ((:search is null or :search = '') or (lower(task.name) like " +
+            "('%' || lower(:search) || '%')) or (lower(task.description) like " +
+            "('%' || lower(:search) || '%'))) " +
+            "and (coalesce(:labelIds) is null or label.id in (:labelIds))";
+
     @Query(
-        value = "select distinct task from Task task left join fetch task.labels label " +
-            "where task.projectId = :projectId " +
-            "and (:search is null or task.name like '%' || :search || '%' or task.description like '%' || :search || '%') " +
-            "and (coalesce(:labelIds) is null or label.id in (:labelIds))",
-        countQuery = "select count(distinct task) from Task task left join task.labels label " +
-            "where task.projectId = :projectId " +
-            "and (:search is null or task.name like '%' || :search || '%' or task.description like '%' || :search || '%') " +
-            "and (coalesce(:labelIds) is null or label.id in (:labelIds))"
+        value = "select distinct task from Task task join fetch task.labels label " +
+            "where task.id in (" + SELECT_BY_PROJECT_ID_SEARCH_LABELS + ")",
+        countQuery = COUNT_BY_PROJECT_ID_SEARCH_LABELS
     )
     Page<Task> findAllWithEagerRelationships(
         @Param("projectId") @NotNull Long projectId,
         @Param("search") String search,
-        @Param("labelIds") Long[] labelIds,
+        @Param("labelIds") List<Long> labels,
         Pageable pageable
     );
 
-    @Query("select distinct task from Task task left join fetch task.labels label " +
-        "where task.projectId = :projectId " +
-        "and (:search is null or task.name like '%' || :search || '%' or task.description like '%' || :search || '%') " +
-        "and (coalesce(:labelIds) is null or label.id in (:labelIds))")
-    List<Task> findAllWithEagerRelationships(
-        @Param("projectId") @NotNull Long projectId,
-        @Param("search") String search,
-        @Param("labelIds") Long[] labelIds
-    );
-
     @Query(
-        value = "select distinct task from Task task left join fetch task.labels label " +
+        value = "select distinct task from Task task left join task.labels label " +
             "where task.projectId = :projectId " +
-            "and (:search is null or task.name like '%' || :search || '%' or task.description like '%' || :search || '%') " +
+            "and ((:search is null or :search = '') or (lower(task.name) like ('%' || lower(:search) || '%')) or (lower(task.description) like ('%' || lower(:search) || '%'))) " +
             "and (coalesce(:labelIds) is null or label.id in (:labelIds))",
-        countQuery = "select count(distinct task) from Task task left join task.labels label " +
-            "where task.projectId = :projectId " +
-            "and (:search is null or task.name like '%' || :search || '%' or task.description like '%' || :search || '%') " +
-            "and (coalesce(:labelIds) is null or label.id in (:labelIds))"
+        countProjection = "distinct task.id"
     )
     Page<Task> findAllByProjectId(
         @Param("projectId") @NotNull Long projectId,
         @Param("search") String search,
-        @Param("labelIds") Long[] labelIds,
+        @Param("labelIds") List<Long> labels,
         Pageable pageable
     );
 
-    @Query("select count(distinct task) from Task task left join task.labels label " +
-        "where task.projectId = :projectId " +
-        "and (:search is null or task.name like '%' || :search || '%' or task.description like '%' || :search || '%') " +
-        "and (coalesce(:labelIds) is null or label.id in (:labelIds))")
+    @Query(COUNT_BY_PROJECT_ID_SEARCH_LABELS)
     long count(
         @Param("projectId") @NotNull Long projectId,
         @Param("search") String search,
-        @Param("labelIds") Long[] labelIds
+        @Param("labelIds") List<Long> labels
     );
 
     @Query("select task from Task task left join fetch task.labels where task.projectId = :projectId and task.id = :id")
@@ -82,5 +75,5 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Nonnull <S extends Task> List<S> saveAll(@Nonnull Iterable<S> entities);
 
-    void deleteAllByProjectIdAndId(@NotNull Long projectId, @NotNull Long id);
+    Optional<Task> deleteByProjectIdAndId(@NotNull Long projectId, @NotNull Long id);
 }

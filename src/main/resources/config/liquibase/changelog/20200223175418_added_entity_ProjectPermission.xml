@@ -11,15 +11,15 @@
         Added the entity ProjectPermission.
     -->
     <changeSet id="20200223175418-1" author="jhipster">
-        <createTable tableName="project_permission" remarks="Permissions of a user towards a project.\n\n@author José Carlos Paiva">
-            <column name="user" type="varchar(50)" remarks="User to which this permission is assigned.">
-                <constraints nullable="false" />
+        <createTable tableName="project_permission" remarks="Permissions of a user towards a project.">
+            <column name="hs_user" type="varchar(50)" remarks="User to which this permission is assigned.">
+                <constraints primaryKey="true" nullable="false" />
             </column>
-            <column name="project_id" type="bigint">
-                <constraints nullable="false" />
+            <column name="project_id" type="bigint" remarks="Project to which this permission is assigned.">
+                <constraints primaryKey="true" nullable="false" />
             </column>
             <column name="permission_name" type="varchar(50)" remarks="The permission of this entry.">
-                <constraints nullable="true" />
+                <constraints primaryKey="true" nullable="false" />
             </column>
             <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here, do not remove-->
         </createTable>
@@ -43,7 +43,7 @@
                   file="config/liquibase/fake-data/project_permission.csv"
                   separator=";"
                   tableName="project_permission">
-            <column name="user" type="string"/>
+            <column name="hs_user" type="string"/>
             <column name="permission_name" type="string"/>
             <column name="project_id" type="numeric"/>
             <!-- jhipster-needle-liquibase-add-loadcolumn - JHipster (and/or extensions) can add load columns here, do not remove-->

@@ -22,6 +22,7 @@ import pt.up.hs.project.domain.Label;
 import pt.up.hs.project.domain.Project;
 import pt.up.hs.project.domain.Task;
 import pt.up.hs.project.repository.TaskRepository;
+import pt.up.hs.project.service.LabelService;
 import pt.up.hs.project.service.TaskService;
 import pt.up.hs.project.service.dto.TaskDTO;
 import pt.up.hs.project.service.mapper.TaskMapper;
@@ -31,8 +32,7 @@ import javax.persistence.EntityManager;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -97,6 +97,9 @@ public class TaskResourceIT {
     private TaskService taskService;
 
     @Autowired
+    private LabelService labelService;
+
+    @Autowired
     private MappingJackson2HttpMessageConverter jacksonMessageConverter;
 
     @Autowired
@@ -114,6 +117,7 @@ public class TaskResourceIT {
     private MockMvc restTaskMockMvc;
 
     private Long projectId;
+    private Long labelId;
     private Task task;
 
     @BeforeEach
@@ -125,7 +129,8 @@ public class TaskResourceIT {
             .setControllerAdvice(exceptionTranslator)
             .setConversionService(createFormattingConversionService())
             .setMessageConverters(jacksonMessageConverter)
-            .setValidator(validator).build();
+            .setValidator(validator)
+            .build();
     }
 
     /**
@@ -134,13 +139,24 @@ public class TaskResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Task createEntity(Long projectId) {
-        return new Task()
+    public static Task createEntity(Long projectId, Long[] labelIds) {
+        Task task = new Task()
             .name(DEFAULT_NAME)
             .description(DEFAULT_DESCRIPTION)
             .startDate(DEFAULT_START_DATE)
             .endDate(DEFAULT_END_DATE)
             .projectId(projectId);
+
+        Set<Label> labels = new HashSet<>();
+        for (Long labelId: labelIds) {
+            Label label = new Label();
+            label.setId(labelId);
+            label.addTasks(task);
+            labels.add(label);
+        }
+        task.setLabels(labels);
+
+        return task;
     }
     /**
      * Create an updated entity for this test.
@@ -148,13 +164,23 @@ public class TaskResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Task createUpdatedEntity(Long projectId) {
-        return new Task()
+    public static Task createUpdatedEntity(Long projectId, Long[] labelIds) {
+        Task task = new Task()
             .name(UPDATED_NAME)
             .description(UPDATED_DESCRIPTION)
             .startDate(UPDATED_START_DATE)
             .endDate(UPDATED_END_DATE)
             .projectId(projectId);
+
+        Set<Label> labels = new HashSet<>();
+        for (Long labelId: labelIds) {
+            Label label = new Label();
+            label.setId(labelId);
+            labels.add(label);
+        }
+        task.setLabels(labels);
+
+        return task;
     }
 
     private static Project getProject(EntityManager em, Project entity) {
@@ -170,10 +196,24 @@ public class TaskResourceIT {
         return project;
     }
 
+    private static Label getLabel(EntityManager em, Label entity) {
+        // Add required entity
+        Label label;
+        if (TestUtil.findAll(em, Label.class).isEmpty()) {
+            label = entity;
+            em.persist(label);
+            em.flush();
+        } else {
+            label = TestUtil.findAll(em, Label.class).get(0);
+        }
+        return label;
+    }
+
     @BeforeEach
     public void initTest() {
         projectId = getProject(em, ProjectResourceIT.createEntity(em)).getId();
-        task = createEntity(projectId);
+        labelId = getLabel(em, LabelResourceIT.createEntity(projectId)).getId();
+        task = createEntity(projectId, new Long[] { labelId });
     }
 
     @Test
@@ -258,14 +298,17 @@ public class TaskResourceIT {
             .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION)))
             .andExpect(jsonPath("$.[*].startDate").value(hasItem(DEFAULT_START_DATE.toString())))
             .andExpect(jsonPath("$.[*].endDate").value(hasItem(DEFAULT_END_DATE.toString())))
-            .andExpect(jsonPath("$.[*].labels").isArray())
+            .andExpect(jsonPath("$.[*].labels.[*].id").value(hasItem(labelId.intValue())))
             .andExpect(jsonPath("$.[*].createdBy").value(hasItem(DEFAULT_USERNAME)))
             .andExpect(jsonPath("$.[*].createdDate").exists());
     }
 
     public void getAllTasksWithEagerRelationshipsIsEnabled() throws Exception {
         TaskResource taskResource = new TaskResource(taskServiceMock);
-        when(taskServiceMock.findAllWithEagerRelationships(projectId, null, null, any())).thenReturn(new PageImpl<>(new ArrayList<>()));
+        when(
+            taskServiceMock
+                .findAllWithEagerRelationships(projectId, null, null, any())
+        ).thenReturn(new PageImpl<>(new ArrayList<>()));
 
         MockMvc restTaskMockMvc = MockMvcBuilders.standaloneSetup(taskResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
@@ -273,25 +316,33 @@ public class TaskResourceIT {
             .setConversionService(createFormattingConversionService())
             .setMessageConverters(jacksonMessageConverter).build();
 
-        restTaskMockMvc.perform(get("/api/projects/{projectId}/tasks?eagerload=true", projectId))
-        .andExpect(status().isOk());
+        restTaskMockMvc
+            .perform(get("/api/projects/{projectId}/tasks?eagerload=true", projectId))
+            .andExpect(status().isOk());
 
-        verify(taskServiceMock, times(1)).findAllWithEagerRelationships(projectId, null, null, any());
+        verify(taskServiceMock, times(1))
+            .findAllWithEagerRelationships(projectId, null, null, any());
     }
 
     public void getAllTasksWithEagerRelationshipsIsNotEnabled() throws Exception {
         TaskResource taskResource = new TaskResource(taskServiceMock);
-            when(taskServiceMock.findAllWithEagerRelationships(projectId, null, null, any())).thenReturn(new PageImpl<>(new ArrayList<>()));
+            when(
+                taskServiceMock
+                    .findAllWithEagerRelationships(projectId, null, null, any())
+            ).thenReturn(new PageImpl<>(new ArrayList<>()));
             MockMvc restTaskMockMvc = MockMvcBuilders.standaloneSetup(taskResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
             .setControllerAdvice(exceptionTranslator)
             .setConversionService(createFormattingConversionService())
             .setMessageConverters(jacksonMessageConverter).build();
 
-        restTaskMockMvc.perform(get("/api/projects/{projectId}/tasks?eagerload=true", projectId))
-        .andExpect(status().isOk());
+        restTaskMockMvc
+            .perform(get("/api/projects/{projectId}/tasks?eagerload=true", projectId))
+            .andExpect(status().isOk());
 
-            verify(taskServiceMock, times(1)).findAllWithEagerRelationships(projectId, null, null, any());
+        verify(
+            taskServiceMock, times(1)
+        ).findAllWithEagerRelationships(projectId, null, null, any());
     }
 
     @Test
@@ -309,7 +360,7 @@ public class TaskResourceIT {
             .andExpect(jsonPath("$.description").value(DEFAULT_DESCRIPTION))
             .andExpect(jsonPath("$.startDate").value(DEFAULT_START_DATE.toString()))
             .andExpect(jsonPath("$.endDate").value(DEFAULT_END_DATE.toString()))
-            .andExpect(jsonPath("$.labels").isArray())
+            .andExpect(jsonPath("$.labels.[*].id").value(hasItem(labelId.intValue())))
             .andExpect(jsonPath("$.createdBy").value(DEFAULT_USERNAME))
             .andExpect(jsonPath("$.createdDate").exists());
     }
@@ -789,7 +840,8 @@ public class TaskResourceIT {
             .name(UPDATED_NAME)
             .description(UPDATED_DESCRIPTION)
             .startDate(UPDATED_START_DATE)
-            .endDate(UPDATED_END_DATE);
+            .endDate(UPDATED_END_DATE)
+            .setLabels(new HashSet<>());
         TaskDTO taskDTO = taskMapper.toDto(updatedTask);
 
         Instant beforeUpdateInstant = Instant.now();
@@ -807,6 +859,7 @@ public class TaskResourceIT {
         assertThat(testTask.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
         assertThat(testTask.getStartDate()).isEqualTo(UPDATED_START_DATE);
         assertThat(testTask.getEndDate()).isEqualTo(UPDATED_END_DATE);
+        assertThat(testTask.getLabels()).isEmpty();
         assertThat(testTask.getCreatedDate()).isStrictlyBetween(beforeCreateInstant, afterCreateInstant);
         assertThat(testTask.getLastModifiedDate()).isStrictlyBetween(beforeUpdateInstant, Instant.now());
     }

@@ -13,7 +13,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * The Task entity.\n\n@author José Carlos Paiva
+ * The Task entity.
+ *
+ * @author José Carlos Paiva
  */
 @Entity
 @Table(name = "task")
@@ -66,13 +68,14 @@ public class Task extends AbstractAuditingEntity {
     private Long projectId;
 
     @ManyToMany(
-        fetch = FetchType.LAZY,
-        cascade = { CascadeType.MERGE }
+        fetch = FetchType.EAGER
+    )
+    @JoinTable(
+        name = "task_labels",
+        joinColumns = @JoinColumn(name = "task_id"),
+        inverseJoinColumns = @JoinColumn(name = "labels_id")
     )
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
-    @JoinTable(name = "task_labels",
-               joinColumns = @JoinColumn(name = "task_id", referencedColumnName = "id"),
-               inverseJoinColumns = @JoinColumn(name = "labels_id", referencedColumnName = "id"))
     private Set<Label> labels = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
@@ -158,7 +161,7 @@ public class Task extends AbstractAuditingEntity {
     }
 
     public Task labels(Set<Label> labels) {
-        this.labels = labels;
+        setLabels(labels);
         return this;
     }
 
@@ -176,6 +179,11 @@ public class Task extends AbstractAuditingEntity {
 
     public void setLabels(Set<Label> labels) {
         this.labels = labels;
+        if (this.labels != null) {
+            for (Label label: this.labels) {
+                label.getTasks().add(this);
+            }
+        }
     }
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here, do not remove
 

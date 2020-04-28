@@ -2,6 +2,8 @@ package pt.up.hs.project.service.mapper;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import pt.up.hs.project.domain.Permission;
+import pt.up.hs.project.domain.Project;
 import pt.up.hs.project.domain.ProjectPermission;
 import pt.up.hs.project.domain.ProjectPermissionId;
 
@@ -19,14 +21,16 @@ public class ProjectPermissionMapperTest {
     @Test
     public void testEntityFromId() {
         String userLogin = "A";
-        Long projectId = 1L;
-        String permission = "READ";
+        Project project = new Project();
+        project.setId(1L);
+        Permission permission = new Permission();
+        permission.setName("READ");
         ProjectPermission projectPermission = projectPermissionMapper
-            .fromId(new ProjectPermissionId(userLogin, projectId, permission));
+            .fromId(new ProjectPermissionId(userLogin, project, permission));
 
         assertThat(projectPermission.getUser()).isEqualTo(userLogin);
-        assertThat(projectPermission.getProjectId()).isEqualTo(projectId);
-        assertThat(projectPermission.getPermissionName()).isEqualTo(permission);
+        assertThat(projectPermission.getProject()).isEqualTo(project);
+        assertThat(projectPermission.getPermission()).isEqualTo(permission);
 
         assertThat(projectPermissionMapper.fromId(null)).isNull();
     }

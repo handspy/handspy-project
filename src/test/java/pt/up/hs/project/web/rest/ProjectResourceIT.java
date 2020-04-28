@@ -1,54 +1,55 @@
 package pt.up.hs.project.web.rest;
 
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
-import org.springframework.security.web.FilterChainProxy;
-import org.springframework.web.context.WebApplicationContext;
-import pt.up.hs.project.ProjectApp;
-import pt.up.hs.project.config.SecurityBeanOverrideConfiguration;
-import pt.up.hs.project.domain.*;
-import pt.up.hs.project.repository.ProjectRepository;
-import pt.up.hs.project.security.PermissionsConstants;
-import pt.up.hs.project.service.ProjectService;
-import pt.up.hs.project.service.dto.ProjectDTO;
-import pt.up.hs.project.service.mapper.ProjectMapper;
-import pt.up.hs.project.web.rest.errors.ExceptionTranslator;
-import pt.up.hs.project.service.ProjectQueryService;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.Validator;
+import org.springframework.web.context.WebApplicationContext;
+import pt.up.hs.project.ProjectApp;
+import pt.up.hs.project.config.SecurityBeanOverrideConfiguration;
+import pt.up.hs.project.domain.Permission;
+import pt.up.hs.project.domain.Project;
+import pt.up.hs.project.domain.enumeration.ProjectStatus;
+import pt.up.hs.project.repository.ProjectRepository;
+import pt.up.hs.project.security.PermissionsConstants;
+import pt.up.hs.project.service.ProjectQueryService;
+import pt.up.hs.project.service.ProjectService;
+import pt.up.hs.project.service.dto.ProjectDTO;
+import pt.up.hs.project.service.mapper.ProjectMapper;
+import pt.up.hs.project.web.rest.errors.ExceptionTranslator;
+import pt.up.hs.project.web.rest.users.WithMockCustomUser;
 
 import javax.persistence.EntityManager;
 import java.time.Instant;
 import java.util.List;
 
-import static pt.up.hs.project.web.rest.ProjectResourceIT.TEST_USER_LOGIN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-import pt.up.hs.project.domain.enumeration.ProjectStatus;
+import static pt.up.hs.project.web.rest.ProjectResourceIT.TEST_USER_LOGIN;
 
 /**
  * Integration tests for the {@link ProjectResource} REST controller.
  */
 @AutoConfigureMockMvc
-@WithMockUser(value = TEST_USER_LOGIN, authorities = {"ROLE_USER"})
+@WithMockCustomUser(username = TEST_USER_LOGIN)
 @SpringBootTest(classes = {SecurityBeanOverrideConfiguration.class, ProjectApp.class})
 public class ProjectResourceIT {
-    static final String TEST_USER_LOGIN = "test";
+    static final String TEST_USER_LOGIN = "test_user";
 
     private static final String DEFAULT_NAME = "AAAAAAAAAA";
     private static final String UPDATED_NAME = "BBBBBBBBBB";
@@ -60,7 +61,7 @@ public class ProjectResourceIT {
     private static final ProjectStatus UPDATED_STATUS = ProjectStatus.OPEN;
 
     private static final String DEFAULT_OWNER = TEST_USER_LOGIN;
-    private static final String UPDATED_OWNER = "user";
+    private static final String UPDATED_OWNER = TEST_USER_LOGIN;
 
     private static final String DEFAULT_COLOR = "AAAAAAAAAA";
     private static final String UPDATED_COLOR = "BBBBBBBBBB";
@@ -103,6 +104,12 @@ public class ProjectResourceIT {
     @Autowired
     WebApplicationContext webApplicationContext;
 
+    @Mock
+    private SecurityContext securityContext;
+
+    @Mock
+    private Authentication authentication;
+
     private MockMvc restProjectMockMvc;
 
     private Project project;
@@ -110,7 +117,8 @@ public class ProjectResourceIT {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        this.restProjectMockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+        this.restProjectMockMvc = MockMvcBuilders
+            .webAppContextSetup(webApplicationContext)
             .build();
     }
 
@@ -147,13 +155,6 @@ public class ProjectResourceIT {
 
     @BeforeEach
     public void initTest() {
-
-        for (String permissionName: PermissionsConstants.ALL) {
-            Permission permission = new Permission().name(permissionName);
-            em.persist(permission);
-            em.flush();
-        }
-
         project = createEntity(em);
     }
 
@@ -197,10 +198,6 @@ public class ProjectResourceIT {
         ProjectDTO projectDTO = projectMapper.toDto(project);
         projectDTO.setOwner(null);
         restProjectMockMvc.perform(post("/api/projects")
-            .with(request -> {
-                request.setRemoteUser(TEST_USER_LOGIN);
-                return request;
-            })
             .contentType(TestUtil.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(projectDTO)))
             .andExpect(status().isCreated());
@@ -214,7 +211,7 @@ public class ProjectResourceIT {
         assertThat(testProject.getStatus()).isEqualTo(DEFAULT_STATUS);
         assertThat(testProject.getOwner()).isEqualTo(DEFAULT_OWNER);
         assertThat(testProject.getColor()).isEqualTo(DEFAULT_COLOR);
-        assertThat(testProject.getCreatedBy()).isEqualTo(TEST_USER_LOGIN);
+        assertThat(testProject.getCreatedBy()).isEqualTo(DEFAULT_USERNAME);
         assertThat(testProject.getCreatedDate()).isStrictlyBetween(beforeInstant, Instant.now());
     }
 
@@ -303,7 +300,7 @@ public class ProjectResourceIT {
         project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
 
         // Get all the projectList
-        restProjectMockMvc.perform(get("/api/projects?sort=id,desc"))
+        restProjectMockMvc.perform(get("/api/projects?offset=0&size=12&sort=createdDate,desc"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(project.getId().intValue())))
@@ -420,7 +417,7 @@ public class ProjectResourceIT {
             ProjectStatus.CLOSED.toString()
         }));
 
-        // Get all the projectList where search contains name of default project and status in [OPEN,CLOSE,DISCARDEDD]
+        // Get all the projectList where search contains name of default project and status in [OPEN,CLOSE,DISCARDED]
         defaultProjectShouldNotBeFound("search=" + DEFAULT_NAME + "&status=" + String.join(",", new String[] {
             ProjectStatus.OPEN.toString(),
             ProjectStatus.CLOSED.toString(),
@@ -514,6 +511,7 @@ public class ProjectResourceIT {
         // Validate the Project in the database
         List<Project> projectList = projectRepository.findAll();
         assertThat(projectList).hasSize(databaseSizeBeforeUpdate);
+
         Project testProject = projectList.get(projectList.size() - 1);
         assertThat(testProject.getName()).isEqualTo(UPDATED_NAME);
         assertThat(testProject.getDescription()).isEqualTo(UPDATED_DESCRIPTION);

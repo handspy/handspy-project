@@ -12,8 +12,10 @@ import java.util.Set;
 
 /**
  * A DTO for the {@link pt.up.hs.project.domain.Task} entity.
+ *
+ * @author José Carlos Paiva
  */
-@ApiModel(description = "The Task entity.\n\n@author José Carlos Paiva")
+@ApiModel(description = "The Task entity.")
 public class TaskDTO extends AbstractAuditingDTO {
 
     private Long id;

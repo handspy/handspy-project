@@ -34,7 +34,6 @@ public class LabelDTO implements Serializable {
      * A label belongs to a project.
      */
     @ApiModelProperty(value = "A label belongs to a project.")
-
     private Long projectId;
 
     public Long getId() {

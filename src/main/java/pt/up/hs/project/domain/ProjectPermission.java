@@ -1,13 +1,11 @@
 package pt.up.hs.project.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-import javax.persistence.*;
-import javax.validation.constraints.*;
-
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -17,110 +15,88 @@ import java.util.Objects;
  * @author José Carlos Paiva
  */
 @Entity
-@IdClass(ProjectPermissionId.class)
 @Table(name = "project_permission")
 @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 public class ProjectPermission implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * User to which this permission is assigned.
-     */
-    @Id
-    @NotNull
-    @Column(name = "user", nullable = false)
-    private String user;
-
-    /**
-     * A permission (project) refers to a project.
-     */
-    @JoinColumn(name = "project_id", insertable = false, updatable = false)
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private Project project;
-
-    @Id
-    @Column(name = "project_id")
-    @NotNull
-    private Long projectId;
-
-    /**
-     * The permission of this entry.
-     */
-    @JoinColumn(name = "permission_name", insertable = false, updatable = false)
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private Permission permission;
-
-    @Id
-    @Column(name = "permission_name")
-    @NotNull
-    private String permissionName;
+    @EmbeddedId
+    private ProjectPermissionId id = new ProjectPermissionId();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
 
+    public ProjectPermissionId getId() {
+        return id;
+    }
+
+    public ProjectPermission id(ProjectPermissionId id) {
+        this.id = id;
+        return this;
+    }
+
+    public void setId(ProjectPermissionId id) {
+        this.id = id;
+    }
+
     public String getUser() {
-        return user;
+        return id.getUser();
     }
 
     public ProjectPermission user(String user) {
-        this.user = user;
+        id.setUser(user);
         return this;
     }
 
     public void setUser(String user) {
-        this.user = user;
+        this.id.setUser(user);
     }
 
     public Project getProject() {
-        return project;
+        return id.getProject();
     }
 
-    public Long getProjectId() {
-        return projectId;
-    }
-
-    public ProjectPermission projectId(Long projectId) {
-        this.projectId = projectId;
+    public ProjectPermission project(Project project) {
+        id.setProject(project);
         return this;
     }
 
-    public void setProjectId(Long projectId) {
-        this.projectId = projectId;
+    public void setProject(Project project) {
+        id.setProject(project);
     }
 
     public Permission getPermission() {
-        return permission;
+        return id.getPermission();
     }
 
-    public String getPermissionName() {
-        return permissionName;
-    }
-
-    public ProjectPermission permission(String permissionName) {
-        this.permissionName = permissionName;
+    public ProjectPermission permission(Permission permission) {
+        id.setPermission(permission);
         return this;
     }
 
-    public void setPermissionName(String permissionName) {
-        this.permissionName = permissionName;
+    public void setPermission(Permission permission) {
+        id.setPermission(permission);
     }
-    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here, do not remove
 
+    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here, do not remove
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ProjectPermission that = (ProjectPermission) o;
-        return Objects.equals(user, that.user) &&
-            Objects.equals(projectId, that.projectId) &&
-            Objects.equals(permissionName, that.permissionName);
+        return Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(user, projectId, permissionName);
+        return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return "ProjectPermission{" +
+            "id=" + id +
+        '}';
     }
 }

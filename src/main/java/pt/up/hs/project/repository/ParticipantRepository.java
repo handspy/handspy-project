@@ -14,67 +14,63 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Spring Data  repository for the Participant entity.
+ * Spring Data repository for the Participant entity.
  */
 @Repository
 public interface ParticipantRepository extends JpaRepository<Participant, Long> {
 
+    String SELECT_BY_PROJECT_ID_SEARCH_LABELS =
+        "select distinct participant.id from Participant participant left join participant.labels label " +
+        "where participant.projectId = :projectId and ((:search is null or :search = '')" +
+            " or (lower(participant.name) like ('%' || lower(:search) || '%'))" +
+            " or (lower(participant.additionalInfo) like ('%' || lower(:search) || '%')))" +
+            " and (coalesce(:labelIds) is null or label.id in (:labelIds))";
+
+    String COUNT_BY_PROJECT_ID_SEARCH_LABELS =
+        "select count(distinct participant.id) from Participant participant left join participant.labels label " +
+            "where participant.projectId = :projectId and ((:search is null or :search = '')" +
+            " or (lower(participant.name) like ('%' || lower(:search) || '%'))" +
+            " or (lower(participant.additionalInfo) like ('%' || lower(:search) || '%')))" +
+            " and (coalesce(:labelIds) is null or label.id in (:labelIds))";
+
     @Query(
-        value = "select distinct participant from Participant participant left join fetch participant.labels label " +
-            "where participant.projectId = :projectId " +
-            "and (:search is null or participant.name like '%' || :search || '%' or participant.additionalInfo like '%' || :search || '%') " +
-            "and (coalesce(:labelIds) is null or label.id in (:labelIds))",
-        countQuery = "select count(distinct participant) from Participant participant left join participant.labels label " +
-            "where participant.projectId = :projectId " +
-            "and (:search is null or participant.name like '%' || :search || '%' or participant.additionalInfo like '%' || :search || '%') " +
-            "and (coalesce(:labelIds) is null or label.id in (:labelIds))"
+        value = "select distinct participant from Participant participant join fetch participant.labels label " +
+            "where participant.id in (" + SELECT_BY_PROJECT_ID_SEARCH_LABELS + ")",
+        countQuery = COUNT_BY_PROJECT_ID_SEARCH_LABELS
     )
     Page<Participant> findAllWithEagerRelationships(
         @Param("projectId") @NotNull Long projectId,
         @Param("search") String search,
-        @Param("labelIds") Long[] labelIds,
+        @Param("labelIds") List<Long> labels,
         Pageable pageable
     );
 
-    @Query("select distinct participant from Participant participant left join fetch participant.labels label " +
-        "where participant.projectId = :projectId " +
-        "and (:search is null or participant.name like '%' || :search || '%' or participant.additionalInfo like '%' || :search || '%') " +
-        "and (coalesce(:labelIds) is null or label.id in (:labelIds))")
-    List<Participant> findAllWithEagerRelationships(
-        @Param("projectId") @NotNull Long projectId,
-        @Param("search") String search,
-        @Param("labelIds") Long[] labelIds
-    );
-
     @Query(
-        value = "select distinct participant from Participant participant left join fetch participant.labels label " +
+        value = "select distinct participant from Participant participant left join participant.labels label " +
             "where participant.projectId = :projectId " +
-            "and (:search is null or participant.name like '%' || :search || '%' or participant.additionalInfo like '%' || :search || '%') " +
+            "and ((:search is null or :search = '') or (lower(participant.name) like ('%' || lower(:search) || '%')) or (lower(participant.additionalInfo) like ('%' || lower(:search) || '%'))) " +
             "and (coalesce(:labelIds) is null or label.id in (:labelIds))",
-        countQuery = "select count(distinct participant) from Participant participant left join participant.labels label " +
-            "where participant.projectId = :projectId " +
-            "and (:search is null or participant.name like '%' || :search || '%' or participant.additionalInfo like '%' || :search || '%') " +
-            "and (coalesce(:labelIds) is null or label.id in (:labelIds))"
+        countProjection = "distinct participant.id"
     )
     Page<Participant> findAllByProjectId(
         @Param("projectId") @NotNull Long projectId,
         @Param("search") String search,
-        @Param("labelIds") Long[] labelIds,
+        @Param("labelIds") List<Long> labels,
         Pageable pageable
     );
 
-    @Query("select count(distinct participant) from Participant participant left join participant.labels label " +
-        "where participant.projectId = :projectId " +
-        "and (:search is null or participant.name like '%' || :search || '%' or participant.additionalInfo like '%' || :search || '%') " +
-        "and (coalesce(:labelIds) is null or label.id in (:labelIds))")
+    @Query(COUNT_BY_PROJECT_ID_SEARCH_LABELS)
     long count(
         @Param("projectId") @NotNull Long projectId,
         @Param("search") String search,
-        @Param("labelIds") Long[] labelIds
+        @Param("labelIds") List<Long> labels
     );
 
     @Query("select participant from Participant participant left join fetch participant.labels where participant.projectId = :projectId and participant.id = :id")
-    Optional<Participant> findOneWithEagerRelationships(@Param("projectId") @NotNull Long projectId, @Param("id") @NotNull Long id);
+    Optional<Participant> findOneWithEagerRelationships(
+        @Param("projectId") @NotNull Long projectId,
+        @Param("id") @NotNull Long id
+    );
 
     Optional<Participant> findByProjectIdAndId(@NotNull Long projectId, @NotNull Long id);
 

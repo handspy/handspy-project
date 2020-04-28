@@ -1,4 +1,4 @@
-user;permission_name;project_id
+hs_user;permission_name;project_id
 system;READ;1
 system;MANAGE;2
 system;WRITE;3

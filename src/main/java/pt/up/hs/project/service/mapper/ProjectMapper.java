@@ -9,9 +9,8 @@ import org.mapstruct.*;
 /**
  * Mapper for the entity {@link Project} and its DTO {@link ProjectDTO}.
  */
-@Mapper(componentModel = "spring", uses = {})
+@Mapper(componentModel = "spring", uses = {ProjectPermissionMapper.class})
 public interface ProjectMapper extends EntityMapper<ProjectDTO, Project> {
-
 
     @Mapping(target = "permissions", ignore = true)
     @Mapping(target = "removePermissions", ignore = true)
@@ -20,6 +19,8 @@ public interface ProjectMapper extends EntityMapper<ProjectDTO, Project> {
     @Mapping(target = "participants", ignore = true)
     @Mapping(target = "removeParticipants", ignore = true)
     Project toEntity(ProjectDTO projectDTO);
+
+    ProjectDTO toDto(Project entity);
 
     default Project fromId(Long id) {
         if (id == null) {

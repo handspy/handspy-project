@@ -13,25 +13,29 @@ import java.util.List;
 public interface ProjectPermissionService {
 
     /**
-     * Save permissions of user in a project, replacing current permissions.
-     *
-     * @param bulkProjectPermissionDTO {@link BulkProjectPermissionDTO} permissions to save.
-     * @return {@link BulkProjectPermissionDTO} permissions of user in a project.
-     */
-    BulkProjectPermissionDTO replaceAll(BulkProjectPermissionDTO bulkProjectPermissionDTO);
-
-    /**
      * Create permissions of user in a project.
      *
+     * @param projectId ID of the project to manage.
+     * @param user User login to manage.
      * @param bulkProjectPermissionDTO {@link BulkProjectPermissionDTO} permissions to save.
      * @return {@link BulkProjectPermissionDTO} permissions of user in a project.
      */
-    BulkProjectPermissionDTO create(BulkProjectPermissionDTO bulkProjectPermissionDTO);
+    BulkProjectPermissionDTO create(Long projectId, String user, BulkProjectPermissionDTO bulkProjectPermissionDTO);
+
+    /**
+     * Save permissions of user in a project, replacing current permissions.
+     *
+     * @param projectId ID of the project to manage.
+     * @param user User login to manage.
+     * @param bulkProjectPermissionDTO {@link BulkProjectPermissionDTO} permissions to save.
+     * @return {@link BulkProjectPermissionDTO} permissions of user in a project.
+     */
+    BulkProjectPermissionDTO replace(Long projectId, String user, BulkProjectPermissionDTO bulkProjectPermissionDTO);
 
     /**
      * Find all permissions of user.
      *
-     * @param user {@link String} user login.
+     * @param user User login.
      * @return {@link List} list of permissions of user.
      */
     List<BulkProjectPermissionDTO> findAll(String user);
@@ -47,31 +51,33 @@ public interface ProjectPermissionService {
     /**
      * Find all permissions of user in project.
      *
-     * @param user {@link String} user login.
      * @param projectId {@link Long} ID of the project.
+     * @param user {@link String} user login.
      * @return {@link ProjectPermissionDTO} permissions of user in a project.
      */
-    BulkProjectPermissionDTO findAll(String user, Long projectId);
+    BulkProjectPermissionDTO findAll(Long projectId, String user);
 
     /**
      * Delete permissions of user in a project.
      *
+     * @param projectId ID of the project to manage.
+     * @param user User login to manage.
      * @param bulkProjectPermissionDTO {@link BulkProjectPermissionDTO} permissions to delete.
      */
-    void delete(BulkProjectPermissionDTO bulkProjectPermissionDTO);
+    void delete(Long projectId, String user, BulkProjectPermissionDTO bulkProjectPermissionDTO);
 
     /**
      * Delete permissions of user in a project.
      *
-     * @param user {@link String} user login.
-     * @param projectId {@link Long} ID of the project
+     * @param projectId ID of the project to manage.
+     * @param user User login to manage.
      */
-    void deleteAll(String user, Long projectId);
+    void deleteAll(Long projectId, String user);
 
     /**
      * Delete permissions of project.
      *
-     * @param projectId {@link Long} ID of the project
+     * @param projectId ID of the project to manage.
      */
     void deleteAll(Long projectId);
 

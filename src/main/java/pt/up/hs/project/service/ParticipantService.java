@@ -38,32 +38,32 @@ public interface ParticipantService {
      *
      * @param projectId the ID of the project containing the participants.
      * @param search the search string.
-     * @param labelIds the ids of the labels to filter by.
+     * @param labels the ids of the labels to filter by.
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
-    Page<ParticipantDTO> findAll(Long projectId, String search, Long[] labelIds, Pageable pageable);
+    Page<ParticipantDTO> findAll(Long projectId, String search, List<Long> labels, Pageable pageable);
 
     /**
      * Get all the participants with eager load of many-to-many relationships.
      *
      * @param projectId the ID of the project containing the participants.
      * @param search the search string.
-     * @param labelIds the ids of the labels to filter by.
+     * @param labels the ids of the labels to filter by.
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
-    Page<ParticipantDTO> findAllWithEagerRelationships(Long projectId, String search, Long[] labelIds, Pageable pageable);
+    Page<ParticipantDTO> findAllWithEagerRelationships(Long projectId, String search, List<Long> labels, Pageable pageable);
 
     /**
      * Count the participants.
      *
      * @param projectId the ID of the project containing the participants.
      * @param search the search string.
-     * @param labelIds the ids of the labels to filter by.
+     * @param labels the ids of the labels to filter by.
      * @return the list of entities.
      */
-    long count(Long projectId, String search, Long[] labelIds);
+    long count(Long projectId, String search, List<Long> labels);
 
     /**
      * Get the "id" participant.

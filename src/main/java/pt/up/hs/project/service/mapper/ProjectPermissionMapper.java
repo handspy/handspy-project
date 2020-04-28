@@ -11,10 +11,16 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring", uses = {ProjectMapper.class})
 public interface ProjectPermissionMapper extends EntityMapper<ProjectPermissionDTO, ProjectPermission> {
 
+    @Mapping(source = "id.user", target = "user")
+    @Mapping(source = "id.project.id", target = "projectId")
+    @Mapping(source = "id.permission.name", target = "permissionName")
     ProjectPermissionDTO toDto(ProjectPermission projectPermission);
 
     @Mapping(target = "permission", ignore = true)
     @Mapping(target = "project", ignore = true)
+    @Mapping(source = "user", target = "id.user")
+    @Mapping(source = "projectId", target = "id.project.id")
+    @Mapping(source = "permissionName", target = "id.permission.name")
     ProjectPermission toEntity(ProjectPermissionDTO projectPermissionDTO);
 
     default ProjectPermission fromId(ProjectPermissionId id) {
@@ -22,9 +28,7 @@ public interface ProjectPermissionMapper extends EntityMapper<ProjectPermissionD
             return null;
         }
         ProjectPermission projectPermission = new ProjectPermission();
-        projectPermission.setUser(id.getUser());
-        projectPermission.setProjectId(id.getProjectId());
-        projectPermission.setPermissionName(id.getPermissionName());
+        projectPermission.setId(id);
         return projectPermission;
     }
 }

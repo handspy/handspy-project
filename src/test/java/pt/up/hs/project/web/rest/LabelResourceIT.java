@@ -113,11 +113,11 @@ public class LabelResourceIT {
             .projectId(projectId);
     }
 
-    private static Project getProject(EntityManager em, Project entity) {
+    private static Project getProject(EntityManager em) {
         // Add required entity
         Project project;
         if (TestUtil.findAll(em, Project.class).isEmpty()) {
-            project = entity;
+            project = ProjectResourceIT.createEntity(em);
             em.persist(project);
             em.flush();
         } else {
@@ -128,7 +128,7 @@ public class LabelResourceIT {
 
     @BeforeEach
     public void initTest() {
-        projectId = getProject(em, ProjectResourceIT.createEntity(em)).getId();
+        projectId = getProject(em).getId();
         label = createEntity(projectId);
     }
 

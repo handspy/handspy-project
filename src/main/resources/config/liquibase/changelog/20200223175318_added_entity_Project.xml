@@ -11,7 +11,7 @@
         Added the entity Project.
     -->
     <changeSet id="20200223175318-1" author="jhipster">
-        <createTable tableName="project" remarks="The Project entity.\n\n@author José Carlos Paiva">
+        <createTable tableName="project" remarks="The Project entity.">
             <column name="id" type="bigint">
                 <constraints primaryKey="true" nullable="false"/>
             </column>

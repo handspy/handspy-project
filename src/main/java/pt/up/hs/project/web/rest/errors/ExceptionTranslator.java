@@ -17,6 +17,9 @@ import org.zalando.problem.Status;
 import org.zalando.problem.spring.web.advice.ProblemHandling;
 import org.zalando.problem.spring.web.advice.security.SecurityAdviceTrait;
 import org.zalando.problem.violations.ConstraintViolationProblem;
+import pt.up.hs.project.constants.ErrorKeys;
+import pt.up.hs.project.constants.ErrorTypes;
+import pt.up.hs.project.service.exceptions.ServiceException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -52,7 +55,7 @@ public class ExceptionTranslator implements ProblemHandling, SecurityAdviceTrait
             return entity;
         }
         ProblemBuilder builder = Problem.builder()
-            .withType(Problem.DEFAULT_TYPE.equals(problem.getType()) ? ErrorConstants.DEFAULT_TYPE : problem.getType())
+            .withType(Problem.DEFAULT_TYPE.equals(problem.getType()) ? ErrorTypes.DEFAULT_TYPE : problem.getType())
             .withStatus(problem.getStatus())
             .withTitle(problem.getTitle())
             .with(PATH_KEY, request.getNativeRequest(HttpServletRequest.class).getRequestURI());
@@ -60,7 +63,7 @@ public class ExceptionTranslator implements ProblemHandling, SecurityAdviceTrait
         if (problem instanceof ConstraintViolationProblem) {
             builder
                 .with(VIOLATIONS_KEY, ((ConstraintViolationProblem) problem).getViolations())
-                .with(MESSAGE_KEY, ErrorConstants.ERR_VALIDATION);
+                .with(MESSAGE_KEY, ErrorKeys.ERR_VALIDATION);
         } else {
             builder
                 .withCause(((DefaultProblem) problem).getCause())
@@ -82,17 +85,17 @@ public class ExceptionTranslator implements ProblemHandling, SecurityAdviceTrait
             .collect(Collectors.toList());
 
         Problem problem = Problem.builder()
-            .withType(ErrorConstants.CONSTRAINT_VIOLATION_TYPE)
+            .withType(ErrorTypes.CONSTRAINT_VIOLATION_TYPE)
             .withTitle("Method argument not valid")
             .withStatus(defaultConstraintViolationStatus())
-            .with(MESSAGE_KEY, ErrorConstants.ERR_VALIDATION)
+            .with(MESSAGE_KEY, ErrorKeys.ERR_VALIDATION)
             .with(FIELD_ERRORS_KEY, fieldErrors)
             .build();
         return create(ex, problem, request);
     }
 
     @ExceptionHandler
-    public ResponseEntity<Problem> handleBadRequestAlertException(BadRequestAlertException ex, NativeWebRequest request) {
+    public ResponseEntity<Problem> handleBadRequestAlertException(BadRequestException ex, NativeWebRequest request) {
         return create(ex, request, HeaderUtil.createFailureAlert(applicationName, true, ex.getEntityName(), ex.getErrorKey(), ex.getMessage()));
     }
 
@@ -100,8 +103,20 @@ public class ExceptionTranslator implements ProblemHandling, SecurityAdviceTrait
     public ResponseEntity<Problem> handleConcurrencyFailure(ConcurrencyFailureException ex, NativeWebRequest request) {
         Problem problem = Problem.builder()
             .withStatus(Status.CONFLICT)
-            .with(MESSAGE_KEY, ErrorConstants.ERR_CONCURRENCY_FAILURE)
+            .with(MESSAGE_KEY, ErrorKeys.ERR_CONCURRENCY_FAILURE)
             .build();
+        return create(ex, problem, request);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<Problem> handleServiceException(ServiceException ex, NativeWebRequest request) {
+        Problem problem;
+        if (ex.getErrorKey() == null) {
+            problem = new ProblemWithoutMessageException(ex.getErrorStatus(), ex.getEntityName());
+        } else {
+            problem = new ProblemWithMessageException(
+                ex.getErrorStatus(), ex.getMessage(), ex.getEntityName(), ex.getErrorKey());
+        }
         return create(ex, problem, request);
     }
 }
