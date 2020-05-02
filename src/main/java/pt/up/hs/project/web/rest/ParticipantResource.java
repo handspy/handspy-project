@@ -1,14 +1,5 @@
 package pt.up.hs.project.web.rest;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.multipart.MultipartFile;
-import pt.up.hs.project.constants.EntityNames;
-import pt.up.hs.project.constants.ErrorKeys;
-import pt.up.hs.project.service.ParticipantService;
-import pt.up.hs.project.service.dto.BulkImportResultDTO;
-import pt.up.hs.project.web.rest.errors.BadRequestException;
-import pt.up.hs.project.service.dto.ParticipantDTO;
-
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.PaginationUtil;
 import io.github.jhipster.web.util.ResponseUtil;
@@ -18,9 +9,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import pt.up.hs.project.constants.EntityNames;
+import pt.up.hs.project.constants.ErrorKeys;
+import pt.up.hs.project.service.ParticipantService;
+import pt.up.hs.project.service.dto.BulkImportResultDTO;
+import pt.up.hs.project.service.dto.ParticipantBasicDTO;
+import pt.up.hs.project.service.dto.ParticipantDTO;
+import pt.up.hs.project.web.rest.errors.BadRequestException;
 
 import javax.validation.Valid;
 import java.io.IOException;
@@ -119,6 +119,23 @@ public class ParticipantResource {
         Page<ParticipantDTO> page = participantService.findAll(projectId, search, labels, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    /**
+     * {@code GET  /participants/basic} : get basic info of all the participants (for selectors).
+     *
+     * @param projectId ID of the project to which the participants belong.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of participants' basic info in body.
+     */
+    @GetMapping("/participants/basic")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and" +
+        " hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
+    public ResponseEntity<List<ParticipantBasicDTO>> getAllParticipantsBasic(
+        @PathVariable("projectId") Long projectId
+    ) {
+        log.debug("REST request to get Participants in project {}", projectId);
+        List<ParticipantBasicDTO> participantDTOs = participantService.findAllBasic(projectId);
+        return ResponseEntity.ok().body(participantDTOs);
     }
 
     /**

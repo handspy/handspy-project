@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import pt.up.hs.project.domain.Task;
+import pt.up.hs.project.service.dto.TaskDTO;
 
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
@@ -67,6 +68,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
         @Param("search") String search,
         @Param("labelIds") List<Long> labels
     );
+
+    List<Task> findAllByProjectId(@NotNull Long projectId);
 
     @Query("select task from Task task left join fetch task.labels where task.projectId = :projectId and task.id = :id")
     Optional<Task> findOneWithEagerRelationships(@Param("projectId") @NotNull Long projectId, @Param("id") Long id);

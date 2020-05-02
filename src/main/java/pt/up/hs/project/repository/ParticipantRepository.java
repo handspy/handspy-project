@@ -66,6 +66,8 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
         @Param("labelIds") List<Long> labels
     );
 
+    List<Participant> findAllByProjectId(@NotNull Long projectId);
+
     @Query("select participant from Participant participant left join fetch participant.labels where participant.projectId = :projectId and participant.id = :id")
     Optional<Participant> findOneWithEagerRelationships(
         @Param("projectId") @NotNull Long projectId,

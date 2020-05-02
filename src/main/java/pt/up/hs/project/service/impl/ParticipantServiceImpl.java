@@ -5,9 +5,12 @@ import pt.up.hs.project.service.ParticipantService;
 import pt.up.hs.project.domain.Participant;
 import pt.up.hs.project.repository.ParticipantRepository;
 import pt.up.hs.project.service.dto.BulkImportResultDTO;
+import pt.up.hs.project.service.dto.ParticipantBasicDTO;
 import pt.up.hs.project.service.dto.ParticipantDTO;
+import pt.up.hs.project.service.dto.TaskBasicDTO;
 import pt.up.hs.project.service.importer.dto.ParticipantCsvDTO;
 import pt.up.hs.project.service.importer.reader.CsvReader;
+import pt.up.hs.project.service.mapper.ParticipantBasicMapper;
 import pt.up.hs.project.service.mapper.ParticipantMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,16 +37,19 @@ public class ParticipantServiceImpl implements ParticipantService {
 
     private final ParticipantRepository participantRepository;
     private final ParticipantMapper participantMapper;
+    private final ParticipantBasicMapper participantBasicMapper;
 
     private final LabelService labelService;
 
     public ParticipantServiceImpl(
         ParticipantRepository participantRepository,
         ParticipantMapper participantMapper,
+        ParticipantBasicMapper participantBasicMapper,
         LabelService labelService
     ) {
         this.participantRepository = participantRepository;
         this.participantMapper = participantMapper;
+        this.participantBasicMapper = participantBasicMapper;
         this.labelService = labelService;
     }
 
@@ -102,6 +108,22 @@ public class ParticipantServiceImpl implements ParticipantService {
         log.debug("Request to get all Participants from project {}", projectId);
         return participantRepository.findAllByProjectId(projectId, search, labels, pageable)
             .map(participantMapper::toDto);
+    }
+
+    /**
+     * Get all the participants' basic info.
+     *
+     * @param projectId the ID of the project containing the participants.
+     * @return the list of entities' basic info.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<ParticipantBasicDTO> findAllBasic(Long projectId) {
+        log.debug("Request to get all Participants' basic info from project {}", projectId);
+        return participantRepository.findAllByProjectId(projectId)
+            .parallelStream()
+            .map(participantBasicMapper::toDto)
+            .collect(Collectors.toList());
     }
 
     /**

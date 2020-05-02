@@ -303,6 +303,21 @@ public class TaskResourceIT {
             .andExpect(jsonPath("$.[*].createdDate").exists());
     }
 
+    @Test
+    @Transactional
+    public void getAllTasksBasic() throws Exception {
+        // Initialize the database
+        taskRepository.saveAndFlush(task);
+
+        // Get all the taskList
+        restTaskMockMvc.perform(get("/api/projects/{projectId}/tasks/basic", projectId))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(task.getId().intValue())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
+            .andExpect(jsonPath("$.[*].labelIds.[*]").value(hasItem(labelId.intValue())));
+    }
+
     public void getAllTasksWithEagerRelationshipsIsEnabled() throws Exception {
         TaskResource taskResource = new TaskResource(taskServiceMock);
         when(

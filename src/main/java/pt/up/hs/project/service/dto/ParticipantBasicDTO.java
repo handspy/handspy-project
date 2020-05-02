@@ -2,41 +2,39 @@ package pt.up.hs.project.service.dto;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import javax.validation.constraints.*;
-import java.io.Serializable;
+import pt.up.hs.project.domain.enumeration.Gender;
+import pt.up.hs.project.domain.enumeration.HandwritingMean;
+
+import javax.validation.constraints.NotNull;
+import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
- * A DTO for the {@link pt.up.hs.project.domain.Label} entity.
+ * A lightweight DTO for the {@link pt.up.hs.project.domain.Participant} entity.
+ * This is used for selection boxes. Only used from server to client.
  *
  * @author José Carlos Paiva
  */
-@ApiModel(description = "The Label entity.\n\n")
-public class LabelDTO implements Serializable {
+@ApiModel(description = "A subset of a Participant entity.")
+public class ParticipantBasicDTO extends AbstractAuditingDTO {
 
     private Long id;
 
     /**
-     * Name of the label
+     * Name of the participant
      */
-    @NotNull
-    @Size(max = 50)
-    @ApiModelProperty(value = "Name of the label", required = true)
+    @ApiModelProperty(value = "Name of the participant", required = true)
     private String name;
 
     /**
-     * Color of the label
+     * A participant belongs to a project.
      */
-    @NotNull
-    @Size(max = 20)
-    @ApiModelProperty(value = "Color of the label", required = true)
-    private String color;
-
-    /**
-     * A label belongs to a project.
-     */
-    @ApiModelProperty(value = "A label belongs to a project.")
+    @ApiModelProperty(value = "A participant belongs to a project.")
     private Long projectId;
+
+    private Set<Long> labelIds = new HashSet<>();
 
     public Long getId() {
         return id;
@@ -54,20 +52,20 @@ public class LabelDTO implements Serializable {
         this.name = name;
     }
 
-    public String getColor() {
-        return color;
-    }
-
-    public void setColor(String color) {
-        this.color = color;
-    }
-
     public Long getProjectId() {
         return projectId;
     }
 
     public void setProjectId(Long projectId) {
         this.projectId = projectId;
+    }
+
+    public Set<Long> getLabelIds() {
+        return labelIds;
+    }
+
+    public void setLabelIds(Set<Long> labelIds) {
+        this.labelIds = labelIds;
     }
 
     @Override
@@ -79,11 +77,11 @@ public class LabelDTO implements Serializable {
             return false;
         }
 
-        LabelDTO labelDTO = (LabelDTO) o;
-        if (labelDTO.getId() == null || getId() == null) {
+        ParticipantBasicDTO participantDTO = (ParticipantBasicDTO) o;
+        if (participantDTO.getId() == null || getId() == null) {
             return false;
         }
-        return Objects.equals(getId(), labelDTO.getId());
+        return Objects.equals(getId(), participantDTO.getId());
     }
 
     @Override
@@ -93,10 +91,9 @@ public class LabelDTO implements Serializable {
 
     @Override
     public String toString() {
-        return "LabelDTO{" +
+        return "ParticipantDTO{" +
             "id=" + getId() +
             ", name='" + getName() + "'" +
-            ", color='" + getColor() + "'" +
             ", projectId=" + getProjectId() +
             "}";
     }

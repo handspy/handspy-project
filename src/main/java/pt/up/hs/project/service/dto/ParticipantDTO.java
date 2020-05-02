@@ -13,10 +13,11 @@ import pt.up.hs.project.domain.enumeration.HandwritingMean;
 
 /**
  * A DTO for the {@link pt.up.hs.project.domain.Participant} entity.
+ *
+ * @author José Carlos Paiva
  */
 @ApiModel(description = "Information about a participant involved in the" +
-    " experiment. Participants are organized in groups, and part of a pr" +
-    "oject.\n\n@author José Carlos Paiva")
+    " experiment.")
 public class ParticipantDTO extends AbstractAuditingDTO {
 
     private Long id;

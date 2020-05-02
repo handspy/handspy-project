@@ -36,7 +36,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -128,6 +130,7 @@ public class ParticipantResourceIT {
     private MockMvc restParticipantMockMvc;
 
     private Long projectId;
+    private Long labelId;
     private Participant participant;
 
     @BeforeEach
@@ -148,8 +151,8 @@ public class ParticipantResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Participant createEntity(Long projectId) {
-        return new Participant()
+    public static Participant createEntity(Long projectId, Long[] labelIds) {
+        Participant participant = new Participant()
             .name(DEFAULT_NAME)
             .gender(DEFAULT_GENDER)
             .birthdate(DEFAULT_BIRTHDATE)
@@ -158,6 +161,17 @@ public class ParticipantResourceIT {
             .image(DEFAULT_IMAGE)
             .imageContentType(DEFAULT_IMAGE_CONTENT_TYPE)
             .projectId(projectId);
+
+        Set<Label> labels = new HashSet<>();
+        for (Long labelId: labelIds) {
+            Label label = new Label();
+            label.setId(labelId);
+            label.addParticipants(participant);
+            labels.add(label);
+        }
+        participant.setLabels(labels);
+
+        return participant;
     }
 
     /**
@@ -166,8 +180,8 @@ public class ParticipantResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Participant createUpdatedEntity(Long projectId) {
-        return new Participant()
+    public static Participant createUpdatedEntity(Long projectId, Long[] labelIds) {
+        Participant participant = new Participant()
             .name(UPDATED_NAME)
             .gender(UPDATED_GENDER)
             .birthdate(UPDATED_BIRTHDATE)
@@ -176,6 +190,16 @@ public class ParticipantResourceIT {
             .image(UPDATED_IMAGE)
             .imageContentType(UPDATED_IMAGE_CONTENT_TYPE)
             .projectId(projectId);
+
+        Set<Label> labels = new HashSet<>();
+        for (Long labelId: labelIds) {
+            Label label = new Label();
+            label.setId(labelId);
+            labels.add(label);
+        }
+        participant.setLabels(labels);
+
+        return participant;
     }
 
     private static Project getProject(EntityManager em, Project entity) {
@@ -191,10 +215,24 @@ public class ParticipantResourceIT {
         return project;
     }
 
+    private static Label getLabel(EntityManager em, Label entity) {
+        // Add required entity
+        Label label;
+        if (TestUtil.findAll(em, Label.class).isEmpty()) {
+            label = entity;
+            em.persist(label);
+            em.flush();
+        } else {
+            label = TestUtil.findAll(em, Label.class).get(0);
+        }
+        return label;
+    }
+
     @BeforeEach
     public void initTest() {
         projectId = getProject(em, ProjectResourceIT.createEntity(em)).getId();
-        participant = createEntity(projectId);
+        labelId = getLabel(em, LabelResourceIT.createEntity(projectId)).getId();
+        participant = createEntity(projectId, new Long[] { labelId });
     }
 
     @Test
@@ -289,6 +327,21 @@ public class ParticipantResourceIT {
             .andExpect(jsonPath("$.[*].labels").isArray())
             .andExpect(jsonPath("$.[*].createdBy").value(hasItem(DEFAULT_USERNAME)))
             .andExpect(jsonPath("$.[*].createdDate").exists());
+    }
+
+    @Test
+    @Transactional
+    public void getAllParticipantsBasic() throws Exception {
+        // Initialize the database
+        participantRepository.saveAndFlush(participant);
+
+        // Get all the participantList
+        restParticipantMockMvc.perform(get("/api/projects/{projectId}/participants/basic", projectId))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(participant.getId().intValue())))
+            .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
+            .andExpect(jsonPath("$.[*].labelIds.[*]").value(hasItem(labelId.intValue())));
     }
 
     @SuppressWarnings({"unchecked"})

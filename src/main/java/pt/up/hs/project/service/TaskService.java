@@ -3,6 +3,7 @@ package pt.up.hs.project.service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import pt.up.hs.project.service.dto.BulkImportResultDTO;
+import pt.up.hs.project.service.dto.TaskBasicDTO;
 import pt.up.hs.project.service.dto.TaskDTO;
 
 import java.io.InputStream;
@@ -36,19 +37,27 @@ public interface TaskService {
      * Get all the tasks.
      *
      * @param projectId the ID of the project containing the tasks.
-     * @param search the search string.
-     * @param labelIds the ids of the labels to filter by.
+     * @param search    the search string.
+     * @param labelIds  the ids of the labels to filter by.
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
     Page<TaskDTO> findAll(Long projectId, String search, List<Long> labelIds, Pageable pageable);
 
     /**
+     * Get all the tasks' basic info.
+     *
+     * @param projectId the ID of the project containing the tasks.
+     * @return the list of entities.
+     */
+    List<TaskBasicDTO> findAllBasic(Long projectId);
+
+    /**
      * Get all the tasks with eager load of many-to-many relationships.
      *
      * @param projectId the ID of the project containing the tasks.
-     * @param search the search string.
-     * @param labelIds the ids of the labels to filter by.
+     * @param search    the search string.
+     * @param labelIds  the ids of the labels to filter by.
      * @param pageable  the pagination information.
      * @return the list of entities.
      */
@@ -58,8 +67,8 @@ public interface TaskService {
      * Count the tasks with eager load of many-to-many relationships.
      *
      * @param projectId the ID of the project containing the tasks.
-     * @param search the search string.
-     * @param labelIds the ids of the labels to filter by.
+     * @param search    the search string.
+     * @param labelIds  the ids of the labels to filter by.
      * @return the list of entities.
      */
     long count(Long projectId, String search, List<Long> labelIds);

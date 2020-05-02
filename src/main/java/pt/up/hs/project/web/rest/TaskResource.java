@@ -18,6 +18,7 @@ import pt.up.hs.project.constants.EntityNames;
 import pt.up.hs.project.constants.ErrorKeys;
 import pt.up.hs.project.service.TaskService;
 import pt.up.hs.project.service.dto.BulkImportResultDTO;
+import pt.up.hs.project.service.dto.TaskBasicDTO;
 import pt.up.hs.project.service.dto.TaskDTO;
 import pt.up.hs.project.web.rest.errors.BadRequestException;
 
@@ -106,7 +107,8 @@ public class TaskResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of tasks in body.
      */
     @GetMapping("/tasks")
-    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and" +
+        " hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<List<TaskDTO>> getAllTasks(
         @PathVariable("projectId") Long projectId,
         @RequestParam(value = "search", required = false, defaultValue = "") String search,
@@ -117,6 +119,23 @@ public class TaskResource {
         Page<TaskDTO> page = taskService.findAll(projectId, search, labels, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    /**
+     * {@code GET  /tasks/basic} : get basic info of all the tasks (for selectors).
+     *
+     * @param projectId ID of the project to which the tasks belong.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of tasks' basic info in body.
+     */
+    @GetMapping("/tasks/basic")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and" +
+        " hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
+    public ResponseEntity<List<TaskBasicDTO>> getAllTasksBasic(
+        @PathVariable("projectId") Long projectId
+    ) {
+        log.debug("REST request to get Tasks in project {}", projectId);
+        List<TaskBasicDTO> taskDTOs = taskService.findAllBasic(projectId);
+        return ResponseEntity.ok().body(taskDTOs);
     }
 
     /**

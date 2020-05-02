@@ -15,12 +15,13 @@ import pt.up.hs.project.repository.LabelRepository;
 import pt.up.hs.project.repository.TaskRepository;
 import pt.up.hs.project.service.TaskService;
 import pt.up.hs.project.service.dto.BulkImportResultDTO;
-import pt.up.hs.project.service.dto.LabelDTO;
+import pt.up.hs.project.service.dto.TaskBasicDTO;
 import pt.up.hs.project.service.dto.TaskDTO;
 import pt.up.hs.project.service.exceptions.ServiceException;
 import pt.up.hs.project.service.importer.dto.TaskCsvDTO;
 import pt.up.hs.project.service.importer.reader.CsvReader;
 import pt.up.hs.project.service.mapper.LabelMapper;
+import pt.up.hs.project.service.mapper.TaskBasicMapper;
 import pt.up.hs.project.service.mapper.TaskMapper;
 
 import java.io.InputStream;
@@ -38,6 +39,7 @@ public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
+    private final TaskBasicMapper taskBasicMapper;
 
     private final LabelRepository labelRepository;
     private final LabelMapper labelMapper;
@@ -45,11 +47,13 @@ public class TaskServiceImpl implements TaskService {
     public TaskServiceImpl(
         TaskRepository taskRepository,
         TaskMapper taskMapper,
+        TaskBasicMapper taskBasicMapper,
         LabelRepository labelRepository,
         LabelMapper labelMapper
     ) {
         this.taskRepository = taskRepository;
         this.taskMapper = taskMapper;
+        this.taskBasicMapper = taskBasicMapper;
         this.labelRepository = labelRepository;
         this.labelMapper = labelMapper;
     }
@@ -93,6 +97,22 @@ public class TaskServiceImpl implements TaskService {
                     .collect(Collectors.toList())
             ).parallelStream()
             .map(taskMapper::toDto)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all the tasks' basic info.
+     *
+     * @param projectId the ID of the project containing the tasks.
+     * @return the list of entities' basic info.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<TaskBasicDTO> findAllBasic(Long projectId) {
+        log.debug("Request to get all Tasks' basic info from project {}", projectId);
+        return taskRepository.findAllByProjectId(projectId)
+            .parallelStream()
+            .map(taskBasicMapper::toDto)
             .collect(Collectors.toList());
     }
 

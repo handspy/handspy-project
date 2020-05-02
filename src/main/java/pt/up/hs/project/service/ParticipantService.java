@@ -1,10 +1,12 @@
 package pt.up.hs.project.service;
 
 import pt.up.hs.project.service.dto.BulkImportResultDTO;
+import pt.up.hs.project.service.dto.ParticipantBasicDTO;
 import pt.up.hs.project.service.dto.ParticipantDTO;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import pt.up.hs.project.service.dto.TaskBasicDTO;
 
 import java.io.InputStream;
 import java.util.List;
@@ -43,6 +45,14 @@ public interface ParticipantService {
      * @return the list of entities.
      */
     Page<ParticipantDTO> findAll(Long projectId, String search, List<Long> labels, Pageable pageable);
+
+    /**
+     * Get all the participants' basic info.
+     *
+     * @param projectId the ID of the project containing the participants.
+     * @return the list of entities.
+     */
+    List<ParticipantBasicDTO> findAllBasic(Long projectId);
 
     /**
      * Get all the participants with eager load of many-to-many relationships.
