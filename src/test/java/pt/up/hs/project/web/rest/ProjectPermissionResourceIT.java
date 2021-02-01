@@ -10,6 +10,7 @@ import pt.up.hs.project.service.ProjectPermissionService;
 import pt.up.hs.project.service.dto.ProjectPermissionDTO;
 import pt.up.hs.project.service.mapper.ProjectPermissionMapper;
 import pt.up.hs.project.web.rest.errors.ExceptionTranslator;
+import pt.up.hs.project.web.rest.users.WithMockCustomUser;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ import org.springframework.validation.Validator;
 import javax.persistence.EntityManager;
 import java.util.List;
 
+import static pt.up.hs.project.web.rest.ProjectResourceIT.TEST_USER_LOGIN;
 import static pt.up.hs.project.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -37,7 +39,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Integration tests for the {@link ProjectPermissionResource} REST controller.
  */
 @SpringBootTest(classes = {SecurityBeanOverrideConfiguration.class, ProjectApp.class})
+@WithMockCustomUser(username = TEST_USER_LOGIN)
 public class ProjectPermissionResourceIT {
+    private static final String TEST_USER_LOGIN = "test_user";
 
     private static final String DEFAULT_USER = "system";
     private static final String UPDATED_USER = "user";
@@ -227,12 +231,27 @@ public class ProjectPermissionResourceIT {
 
     @Test
     @Transactional
-    public void getProjectPermission() throws Exception {
+    public void getProjectPermissions() throws Exception {
         // Initialize the database
         projectPermissionRepository.saveAndFlush(projectPermission);
 
         // Get the projectPermission
         restProjectPermissionMockMvc.perform(get("/api/projects/{projectId}/permissions", projectPermission.getId().getProject().getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].projectId").value(projectPermission.getId().getProject().getId().intValue()))
+            .andExpect(jsonPath("$.[*].user").value(DEFAULT_USER))
+            .andExpect(jsonPath("$.[*].permissions.[*]").value(hasItem(projectPermission.getId().getPermission().getName())));
+    }
+
+    @Test
+    @Transactional
+    public void getUserPermissions() throws Exception {
+        // Initialize the database
+        projectPermissionRepository.saveAndFlush(projectPermission);
+
+        // Get the projectPermission
+        restProjectPermissionMockMvc.perform(get("/api/permissions/{userId}", projectPermission.getId().getUser()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].projectId").value(projectPermission.getId().getProject().getId().intValue()))

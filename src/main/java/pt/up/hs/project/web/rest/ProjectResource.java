@@ -1,21 +1,15 @@
 package pt.up.hs.project.web.rest;
 
 import io.github.jhipster.web.util.HeaderUtil;
-import io.github.jhipster.web.util.PaginationUtil;
 import io.github.jhipster.web.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import pt.up.hs.project.constants.EntityNames;
 import pt.up.hs.project.constants.ErrorKeys;
-import pt.up.hs.project.domain.enumeration.ProjectStatus;
 import pt.up.hs.project.service.ProjectService;
 import pt.up.hs.project.service.dto.ProjectDTO;
 import pt.up.hs.project.web.rest.errors.BadRequestException;
@@ -73,7 +67,10 @@ public class ProjectResource {
      * or with status {@code 500 (Internal Server Error)} if the projectDTO couldn't be updated.
      */
     @PutMapping("/projects")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectDTO.id, 'pt.up.hs.project.domain.Project', 'ADMIN')")
+    @PreAuthorize(
+        "hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+            "hasPermission(#projectDTO.id, 'pt.up.hs.project.domain.Project', 'ADMIN')"
+    )
     public ResponseEntity<ProjectDTO> updateProject(@Valid @RequestBody ProjectDTO projectDTO) {
         log.debug("REST request to update Project : {}", projectDTO);
         if (projectDTO.getId() == null) {
@@ -88,40 +85,28 @@ public class ProjectResource {
     /**
      * {@code GET  /projects} : get all the projects.
      *
-     * @param search the search string.
-     * @param statuses the statuses to include.
-     * @param pageable the pagination information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of projects in body.
      */
     @GetMapping("/projects")
     @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN')")
-    public ResponseEntity<List<ProjectDTO>> getAllProjects(
-        @RequestParam(value = "search", required = false, defaultValue = "") String search,
-        @RequestParam(value = "status", required = false) List<ProjectStatus> statuses,
-        Pageable pageable
-    ) {
+    public ResponseEntity<List<ProjectDTO>> getAllProjects() {
         log.debug("REST request to get projects");
-        Page<ProjectDTO> page = projectService.findAll(search, statuses, pageable);
-        HttpHeaders headers = PaginationUtil
-            .generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        return ResponseEntity.ok().headers(headers).body(page.getContent());
+        List<ProjectDTO> projects = projectService.findAll();
+        /*HttpHeaders headers = PaginationUtil
+            .generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);*/
+        return ResponseEntity.ok().body(projects);
     }
 
     /**
      * {@code GET  /projects/count} : count all the projects.
      *
-     * @param search the search string.
-     * @param statuses the statuses to include.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the count in body.
      */
     @GetMapping("/projects/count")
     @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN')")
-    public ResponseEntity<Long> countProjects(
-        @RequestParam(value = "search", required = false, defaultValue = "") String search,
-        @RequestParam(value = "status", required = false) List<ProjectStatus> statuses
-    ) {
+    public ResponseEntity<Long> countProjects() {
         log.debug("REST request to count projects");
-        return ResponseEntity.ok().body(projectService.count(search, statuses));
+        return ResponseEntity.ok().body(projectService.count());
     }
 
     /**
@@ -131,7 +116,10 @@ public class ProjectResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the projectDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/projects/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#id, 'pt.up.hs.project.domain.Project', 'READ')")
+    @PreAuthorize(
+        "hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+            "hasPermission(#id, 'pt.up.hs.project.domain.Project', 'READ')"
+    )
     public ResponseEntity<ProjectDTO> getProject(@PathVariable Long id) {
         log.debug("REST request to get Project : {}", id);
         Optional<ProjectDTO> projectDTO = projectService.findOne(id);
@@ -145,12 +133,16 @@ public class ProjectResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/projects/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#id, 'pt.up.hs.project.domain.Project', 'ADMIN')")
-    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
+    @PreAuthorize(
+        "hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+            "hasPermission(#id, 'pt.up.hs.project.domain.Project', 'ADMIN')"
+    )
+    public ResponseEntity<ProjectDTO> deleteProject(@PathVariable Long id) {
         log.debug("REST request to delete Project : {}", id);
-        projectService.delete(id);
-        return ResponseEntity.noContent()
-            .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, EntityNames.PROJECT, id.toString()))
-            .build();
+        Optional<ProjectDTO> result = projectService.delete(id);
+        return ResponseUtil.wrapOrNotFound(result,
+            result.map(projectDTO -> HeaderUtil.createEntityUpdateAlert(applicationName, true, EntityNames.PROJECT, projectDTO.getId().toString())).orElse(null));
     }
+
+
 }

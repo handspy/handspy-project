@@ -333,98 +333,6 @@ public class ProjectResourceIT {
             .andExpect(jsonPath("$.createdDate").exists());
     }
 
-    @Test
-    @Transactional
-    public void getAllProjectsBySearchQueryWithPartialName() throws Exception {
-
-        // Initialize the database
-        project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
-
-        // Get all the projectList where name equals to DEFAULT_NAME
-        defaultProjectShouldBeFound("search=" + DEFAULT_NAME.substring(1, 3));
-
-        // Get all the projectList where name equals to UPDATED_NAME
-        defaultProjectShouldNotBeFound("search=" + UPDATED_NAME.substring(1, 3));
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsBySearchQueryWithPartialDescription() throws Exception {
-
-        // Initialize the database
-        project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
-
-        // Get all the projectList where name equals to DEFAULT_NAME
-        defaultProjectShouldBeFound("search=" + DEFAULT_DESCRIPTION.substring(1, 3));
-
-        // Get all the projectList where name equals to UPDATED_NAME
-        defaultProjectShouldNotBeFound("search=" + UPDATED_DESCRIPTION.substring(1, 3));
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByStatus() throws Exception {
-
-        // Initialize the database
-        project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
-
-        // Get all the projectList where status in [DRAFT]
-        defaultProjectShouldBeFound("status=" + String.join(",", new String[] {ProjectStatus.DRAFT.toString()}));
-
-        // Get all the projectList where status in [OPEN]
-        defaultProjectShouldNotBeFound("status=" + String.join(",", new String[] {ProjectStatus.OPEN.toString()}));
-
-        // Get all the projectList where status in [CLOSED]
-        defaultProjectShouldNotBeFound("status=" + String.join(",", new String[] {ProjectStatus.CLOSED.toString()}));
-
-        // Get all the projectList where status in [DISCARDED]
-        defaultProjectShouldNotBeFound("status=" + String.join(",", new String[] {ProjectStatus.DISCARDED.toString()}));
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByMultipleStatus() throws Exception {
-
-        // Initialize the database
-        project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
-
-        // Get all the projectList where status in [DRAFT,OPEN,CLOSED]
-        defaultProjectShouldBeFound("status=" + String.join(",", new String[] {
-            ProjectStatus.DRAFT.toString(),
-            ProjectStatus.OPEN.toString(),
-            ProjectStatus.CLOSED.toString()
-        }));
-
-        // Get all the projectList where status in [OPEN,CLOSED,DISCARDED]
-        defaultProjectShouldNotBeFound("status=" + String.join(",", new String[] {
-            ProjectStatus.OPEN.toString(),
-            ProjectStatus.CLOSED.toString(),
-            ProjectStatus.DISCARDED.toString()
-        }));
-    }
-
-    @Test
-    @Transactional
-    public void getAllProjectsByMultipleStatusAndSearch() throws Exception {
-
-        // Initialize the database
-        project = projectMapper.toEntity(projectService.save(projectMapper.toDto(project)));
-
-        // Get all the projectList where search contains name of default project and status in [DRAFT,OPEN,CLOSED]
-        defaultProjectShouldBeFound("search=" + DEFAULT_NAME + "&status=" + String.join(",", new String[] {
-            ProjectStatus.DRAFT.toString(),
-            ProjectStatus.OPEN.toString(),
-            ProjectStatus.CLOSED.toString()
-        }));
-
-        // Get all the projectList where search contains name of default project and status in [OPEN,CLOSE,DISCARDED]
-        defaultProjectShouldNotBeFound("search=" + DEFAULT_NAME + "&status=" + String.join(",", new String[] {
-            ProjectStatus.OPEN.toString(),
-            ProjectStatus.CLOSED.toString(),
-            ProjectStatus.DISCARDED.toString()
-        }));
-    }
-
     /**
      * Executes the search, and checks that the default entity is returned.
      */
@@ -551,13 +459,17 @@ public class ProjectResourceIT {
 
         int databaseSizeBeforeDelete = projectRepository.findAll().size();
 
+        ProjectDTO projectDTO = projectMapper.toDto(project);
+        projectDTO.setStatus(ProjectStatus.DISCARDED);
+
         // Delete the project
         restProjectMockMvc.perform(delete("/api/projects/{id}", project.getId())
-            .accept(TestUtil.APPLICATION_JSON))
-            .andExpect(status().isNoContent());
+            .accept(TestUtil.APPLICATION_JSON)
+            .content(TestUtil.convertObjectToJsonBytes(projectDTO)))
+            .andExpect(status().isOk());
 
-        // Validate the database contains one less item
+        // Validate the database contains same items (soft delete)
         List<Project> projectList = projectRepository.findAll();
-        assertThat(projectList).hasSize(databaseSizeBeforeDelete - 1);
+        assertThat(projectList).hasSize(databaseSizeBeforeDelete);
     }
 }

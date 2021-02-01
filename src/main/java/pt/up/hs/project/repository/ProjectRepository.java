@@ -25,7 +25,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             "where permission.id.user = ?#{principal} and permission.id.permission.name = '" + PermissionsConstants.READ + "'",
         countProjection = "distinct project.id"
     )
-    @Nonnull Page<Project> findAll(@Nonnull Pageable pageable);
+    @Nonnull List<Project> findAll();
 
     @Query(
         value = "select distinct project from Project project join project.permissions permission " +
@@ -34,20 +34,14 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             "and ((:search is null or :search = '') or (lower(project.name) like ('%' || lower(:search) || '%')) or (lower(project.description) like ('%' || lower(:search) || '%')))",
         countProjection = "distinct project.id"
     )
-    @Nonnull Page<Project> findAllByStatusAndSearch(
+    @Nonnull List<Project> findAllByStatusAndSearch(
         @Param("statuses") @Nonnull List<ProjectStatus> statuses,
-        @Param("search") @Nonnull String search,
-        Pageable pageable
+        @Param("search") @Nonnull String search
     );
 
     @Query(
         value = "select count(distinct project) from Project project join project.permissions permission " +
-            "where permission.id.user = ?#{principal} and permission.id.permission.name = '" + PermissionsConstants.READ + "' " +
-            "and (coalesce(:statuses) is null or project.status in (:statuses)) " +
-            "and ((:search is null or :search = '') or (lower(project.name) like ('%' || lower(:search) || '%')) or (lower(project.description) like ('%' || lower(:search) || '%')))"
+            "where permission.id.user = ?#{principal} and permission.id.permission.name = '" + PermissionsConstants.READ + "'"
     )
-    @Nonnull Long countByStatusAndSearch(
-        @Param("statuses") @Nonnull List<ProjectStatus> statuses,
-        @Param("search") @Nonnull String search
-    );
+    long count();
 }

@@ -15,13 +15,17 @@ import pt.up.hs.project.web.rest.errors.BadRequestException;
 import javax.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * REST controller for managing {@link pt.up.hs.project.domain.ProjectPermission}.
  */
 @RestController
-@RequestMapping("/api/projects/{projectId}")
+@RequestMapping("/api")
 public class ProjectPermissionResource {
 
     private final Logger log = LoggerFactory.getLogger(ProjectPermissionResource.class);
@@ -36,14 +40,17 @@ public class ProjectPermissionResource {
     }
 
     /**
-     * {@code POST  /permissions} : Create a new permissions.
+     * {@code POST  /projects/{projectId}/permissions} : Create a new permissions.
      *
      * @param bulkProjectPermissionDTO {@link BulkProjectPermissionDTO} the permissions to create.
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new projectPermissionDTO, or with status {@code 400 (Bad Request)} if the projectPermission has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PostMapping("/permissions/{user:^[_.@A-Za-z0-9-]*$}")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN')")
+    @PostMapping("/projects/{projectId}/permissions/{user:^[_.@A-Za-z0-9-]*$}")
+    @PreAuthorize(
+        "hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+            "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN')"
+    )
     public ResponseEntity<BulkProjectPermissionDTO> createProjectPermissions(
         @PathVariable("projectId") Long projectId,
         @PathVariable("user") String user,
@@ -67,15 +74,18 @@ public class ProjectPermissionResource {
     }
 
     /**
-     * {@code PUT  /permissions/:user} : Replaces existing permissions.
+     * {@code PUT  /projects/{projectId}/permissions/:user} : Replaces existing permissions.
      *
      * @param bulkProjectPermissionDTO the new permissions to replace.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated projectPermissionDTO,
      * or with status {@code 400 (Bad Request)} if the projectPermissionDTO is not valid,
      * or with status {@code 500 (Internal Server Error)} if the projectPermissionDTO couldn't be updated.
      */
-    @PutMapping("/permissions/{user:^[_.@A-Za-z0-9-]*$}")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN')")
+    @PutMapping("/projects/{projectId}/permissions/{user:^[_.@A-Za-z0-9-]*$}")
+    @PreAuthorize(
+        "hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+        "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN')"
+    )
     public ResponseEntity<BulkProjectPermissionDTO> updateProjectPermission(
         @PathVariable("projectId") Long projectId,
         @PathVariable("user") String user,
@@ -104,8 +114,11 @@ public class ProjectPermissionResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the
      *                                    list of permissions of project by user in body.
      */
-    @GetMapping("/permissions")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN')")
+    @GetMapping("/projects/{projectId}/permissions")
+    @PreAuthorize(
+        "hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+        "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN')"
+    )
     public ResponseEntity<List<BulkProjectPermissionDTO>> getAllProjectPermissions(
         @PathVariable("projectId") Long projectId
     ) {
@@ -113,10 +126,52 @@ public class ProjectPermissionResource {
         List<BulkProjectPermissionDTO> result = projectPermissionService.findAll(projectId);
         return ResponseEntity.ok().body(result);
     }
+    /**
+     * {@code GET  /permissions/:user} : get all the permissions of user.
+     *
+     * @param user the user login.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the
+     *                                    list of permissions of user in body.
+     */
+    @GetMapping("/permissions/{user:^[_.@A-Za-z0-9-]*$}")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN') or (hasAnyRole('ROLE_USER', 'ROLE_GUEST', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal == user)")
+    public ResponseEntity<List<BulkProjectPermissionDTO>> getUserPermissions(
+        @PathVariable("user") String user
+    ) {
+        log.debug("REST request to get permissions for user {}", user);
+        List<BulkProjectPermissionDTO> result = projectPermissionService.findAll(user);
+        return ResponseEntity.ok().body(result);
+    }
 
     /**
-     * {@code GET  /permissions/:user} : get all the permissions of user in
-     * project.
+     * {@code GET  /permissions/:user} : get all users connected to user by a.
+     *
+     * @param user the user login.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the
+     *                                    list of permissions of user in body.
+     */
+    @GetMapping("/permissions/{user:^[_.@A-Za-z0-9-]*$}/connections")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN') or (hasAnyRole('ROLE_USER', 'ROLE_GUEST', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal == user)")
+    public ResponseEntity<Set<String>> getUserConnections (
+        @PathVariable("user") String user
+    ) {
+        log.debug("REST request to get connections of user {}", user);
+        Set<String> connections = new HashSet<>();
+        List<BulkProjectPermissionDTO> userPermissions = projectPermissionService.findAll(user);
+        for (BulkProjectPermissionDTO permissionDTO: userPermissions) {
+            Long projectId = permissionDTO.getProjectId();
+            List<BulkProjectPermissionDTO> projectPermissions = projectPermissionService.findAll(projectId);
+            connections.addAll(projectPermissions.parallelStream()
+                .map(BulkProjectPermissionDTO::getUser)
+                .filter(login -> login.equalsIgnoreCase(user))
+                .collect(Collectors.toList()));
+        }
+        return ResponseEntity.ok().body(connections);
+    }
+
+    /**
+     * {@code GET  /projects/{projectId}/permissions/:user} : get all the
+     * permissions of user in project.
      *
      * @param projectId the ID of the project.
      * @param user the user login.
@@ -124,10 +179,12 @@ public class ProjectPermissionResource {
      *                                    list of permissions of user in project
      *                                    in body.
      */
-    @GetMapping("/permissions/{user:^[_.@A-Za-z0-9-]*$}")
+    @GetMapping("/projects/{projectId}/permissions/{user:^[_.@A-Za-z0-9-]*$}")
     @PreAuthorize(
-        "(hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN'))" +
-            " or (hasAnyRole('ROLE_USER', 'ROLE_GUEST', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal == user)")
+        "(" +
+            "hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+            "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN')" +
+            ") or (hasAnyRole('ROLE_USER', 'ROLE_GUEST', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal == user)")
     public ResponseEntity<BulkProjectPermissionDTO> getUserPermissionsInProject(
         @PathVariable("projectId") Long projectId,
         @PathVariable("user") String user
@@ -138,18 +195,20 @@ public class ProjectPermissionResource {
     }
 
     /**
-     * {@code DELETE  /permissions/:user} : delete all the permissions of user
-     * in project.
+     * {@code DELETE  /projects/{projectId}/permissions/:user} : delete all the
+     * permissions of user in project.
      *
      * @param projectId the ID of the project.
      * @param user the user login.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and
      * empty body.
      */
-    @DeleteMapping("/permissions/{user:^[_.@A-Za-z0-9-]*$}")
+    @DeleteMapping("/projects/{projectId}/permissions/{user:^[_.@A-Za-z0-9-]*$}")
     @PreAuthorize(
-        "(hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN'))" +
-            " or (hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal == user)")
+        "(" +
+            "hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+            "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN')" +
+        ") or (hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal == user)")
     public ResponseEntity<Void> deleteUserPermissionsInProject(
         @PathVariable("user") String user,
         @PathVariable("projectId") Long projectId

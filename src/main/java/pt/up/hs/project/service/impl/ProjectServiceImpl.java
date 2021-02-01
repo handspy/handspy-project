@@ -3,8 +3,6 @@ package pt.up.hs.project.service.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.up.hs.project.domain.Project;
@@ -104,46 +102,28 @@ public class ProjectServiceImpl implements ProjectService {
     /**
      * Get all the projects.
      *
-     * @param pageable the pagination information.
      * @return the list of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<ProjectDTO> findAll(Pageable pageable) {
+    public List<ProjectDTO> findAll() {
         log.debug("Request to get all Projects");
-        return projectRepository.findAll(pageable)
-            .map(projectMapper::toDto);
-    }
-
-    /**
-     * Get all the projects.
-     *
-     * @param search the search string.
-     * @param statuses the statuses to include.
-     * @param pageable the pagination information.
-     * @return the list of entities.
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProjectDTO> findAll(String search, List<ProjectStatus> statuses, Pageable pageable) {
-        log.debug("Request to get all Projects matching search {} and statuses {}", search, statuses);
-        return projectRepository
-            .findAllByStatusAndSearch(statuses, search, pageable)
-            .map(projectMapper::toDto);
+        return projectRepository.findAll()
+            .stream()
+            .map(projectMapper::toDto)
+            .collect(Collectors.toList());
     }
 
     /**
      * Count the projects.
      *
-     * @param search the search string.
-     * @param statuses the statuses to include.
      * @return the list of entities.
      */
     @Override
     @Transactional(readOnly = true)
-    public long count(String search, List<ProjectStatus> statuses) {
-        log.debug("Request to count Projects matching search {} and statuses {}", search, statuses);
-        return projectRepository.countByStatusAndSearch(statuses, search);
+    public long count() {
+        log.debug("Request to count Projects");
+        return projectRepository.count();
     }
 
     /**
@@ -164,14 +144,16 @@ public class ProjectServiceImpl implements ProjectService {
      * Delete the project by id.
      *
      * @param id the id of the entity.
+     * @return the project.
      */
     @Override
-    public void delete(Long id) {
+    public Optional<ProjectDTO> delete(Long id) {
         log.debug("Request to delete Project : {}", id);
 
-        // delete all permissions of project
-        projectPermissionService.deleteAll(id);
+        Optional<Project> projectOptional = projectRepository.findById(id);
 
-        projectRepository.deleteById(id);
+        return projectOptional.flatMap(project -> Optional.of(projectRepository.saveAndFlush(
+            project.status(ProjectStatus.DISCARDED)
+        )).map(projectMapper::toDto));
     }
 }

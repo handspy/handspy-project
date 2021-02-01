@@ -1,10 +1,8 @@
 package pt.up.hs.project.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import pt.up.hs.project.domain.enumeration.ProjectStatus;
 import pt.up.hs.project.service.dto.ProjectDTO;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,29 +23,16 @@ public interface ProjectService {
     /**
      * Get all the projects.
      *
-     * @param pageable the pagination information.
      * @return the list of entities.
      */
-    Page<ProjectDTO> findAll(Pageable pageable);
-
-    /**
-     * Get all the projects.
-     *
-     * @param search the search string.
-     * @param statuses the statuses to include.
-     * @param pageable the pagination information.
-     * @return the list of entities.
-     */
-    Page<ProjectDTO> findAll(String search, List<ProjectStatus> statuses, Pageable pageable);
+    List<ProjectDTO> findAll();
 
     /**
      * Count the projects.
      *
-     * @param search the search string.
-     * @param statuses the statuses to include.
-     * @return the list of entities.
+     * @return the number of entities.
      */
-    long count(String search, List<ProjectStatus> statuses);
+    long count();
 
     /**
      * Get the "id" project.
@@ -61,6 +46,7 @@ public interface ProjectService {
      * Delete the "id" project.
      *
      * @param id the id of the entity.
+     * @return the entity.
      */
-    void delete(Long id);
+    Optional<ProjectDTO> delete(Long id);
 }
