@@ -117,7 +117,7 @@ public class ProjectPermissionResource {
     @GetMapping("/projects/{projectId}/permissions")
     @PreAuthorize(
         "hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
-        "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN')"
+        "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')"
     )
     public ResponseEntity<List<BulkProjectPermissionDTO>> getAllProjectPermissions(
         @PathVariable("projectId") Long projectId
@@ -134,7 +134,12 @@ public class ProjectPermissionResource {
      *                                    list of permissions of user in body.
      */
     @GetMapping("/permissions/{user:^[_.@A-Za-z0-9-]*$}")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN') or (hasAnyRole('ROLE_USER', 'ROLE_GUEST', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal == user)")
+    @PreAuthorize(
+        "hasAnyAuthority('ROLE_ADMIN') or (" +
+            "hasAnyAuthority('ROLE_USER', 'ROLE_GUEST', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+            "principal == #user" +
+        ")"
+    )
     public ResponseEntity<List<BulkProjectPermissionDTO>> getUserPermissions(
         @PathVariable("user") String user
     ) {
@@ -151,7 +156,12 @@ public class ProjectPermissionResource {
      *                                    list of permissions of user in body.
      */
     @GetMapping("/permissions/{user:^[_.@A-Za-z0-9-]*$}/connections")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN') or (hasAnyRole('ROLE_USER', 'ROLE_GUEST', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal == user)")
+    @PreAuthorize(
+        "hasAnyAuthority('ROLE_ADMIN') or (" +
+            "hasAnyAuthority('ROLE_USER', 'ROLE_GUEST', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+            "principal == #user" +
+        ")"
+    )
     public ResponseEntity<Set<String>> getUserConnections (
         @PathVariable("user") String user
     ) {
@@ -163,7 +173,7 @@ public class ProjectPermissionResource {
             List<BulkProjectPermissionDTO> projectPermissions = projectPermissionService.findAll(projectId);
             connections.addAll(projectPermissions.parallelStream()
                 .map(BulkProjectPermissionDTO::getUser)
-                .filter(login -> login.equalsIgnoreCase(user))
+                .filter(login -> !login.equalsIgnoreCase(user))
                 .collect(Collectors.toList()));
         }
         return ResponseEntity.ok().body(connections);
@@ -184,7 +194,7 @@ public class ProjectPermissionResource {
         "(" +
             "hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
             "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN')" +
-            ") or (hasAnyRole('ROLE_USER', 'ROLE_GUEST', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal == user)")
+            ") or (hasAnyRole('ROLE_USER', 'ROLE_GUEST', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal == #user)")
     public ResponseEntity<BulkProjectPermissionDTO> getUserPermissionsInProject(
         @PathVariable("projectId") Long projectId,
         @PathVariable("user") String user
@@ -208,7 +218,7 @@ public class ProjectPermissionResource {
         "(" +
             "hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
             "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'ADMIN')" +
-        ") or (hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal == user)")
+        ") or (hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and principal == #user)")
     public ResponseEntity<Void> deleteUserPermissionsInProject(
         @PathVariable("user") String user,
         @PathVariable("projectId") Long projectId

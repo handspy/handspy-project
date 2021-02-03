@@ -57,7 +57,8 @@ public class TaskResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/tasks")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+        "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
     public ResponseEntity<TaskDTO> createTask(
         @PathVariable("projectId") Long projectId,
         @Valid @RequestBody TaskDTO taskDTO
@@ -82,7 +83,8 @@ public class TaskResource {
      * or with status {@code 500 (Internal Server Error)} if the taskDTO couldn't be updated.
      */
     @PutMapping("/tasks")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+        "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
     public ResponseEntity<TaskDTO> updateTask(
         @PathVariable("projectId") Long projectId,
         @Valid @RequestBody TaskDTO taskDTO
@@ -147,7 +149,8 @@ public class TaskResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the count in body.
      */
     @GetMapping("/tasks/count")
-    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+        "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<Long> countTasks(
         @PathVariable("projectId") Long projectId,
         @RequestParam(value = "search", required = false, defaultValue = "") String search,
@@ -166,7 +169,8 @@ public class TaskResource {
      * or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/tasks/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
+    @PreAuthorize("hasAnyRole('ROLE_GUEST', 'ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+        "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ')")
     public ResponseEntity<TaskDTO> getTask(
         @PathVariable("projectId") Long projectId,
         @PathVariable Long id
@@ -188,7 +192,8 @@ public class TaskResource {
      * body the {@link BulkImportResultDTO}.
      */
     @PostMapping(value = "/tasks/import", consumes = "text/csv")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+        "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
     public ResponseEntity<BulkImportResultDTO<TaskDTO>> importSimple(
         @PathVariable("projectId") Long projectId,
         @RequestParam(value = "sep", defaultValue = ",") String sep,
@@ -212,7 +217,8 @@ public class TaskResource {
      * body the {@link BulkImportResultDTO}.
      */
     @PostMapping(value = "/tasks/import", consumes = "multipart/form-data")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+        "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'WRITE')")
     public ResponseEntity<BulkImportResultDTO<TaskDTO>> importMultipart(
         @PathVariable("projectId") Long projectId,
         @RequestParam(value = "sep", defaultValue = ",") String sep,
@@ -234,7 +240,8 @@ public class TaskResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/tasks/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'MANAGE')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+        "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'MANAGE')")
     public ResponseEntity<Void> deleteTask(
         @PathVariable("projectId") Long projectId,
         @PathVariable Long id

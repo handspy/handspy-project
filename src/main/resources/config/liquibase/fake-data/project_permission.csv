@@ -2,10 +2,10 @@ hs_user;permission_name;project_id
 system;READ;1
 system;MANAGE;2
 system;WRITE;3
-system;READ;4
+system;READ_DETAIL;4
 system;WRITE;5
 system;WRITE;6
 system;WRITE;7
-system;READ;8
+system;READ_DETAIL;8
 system;ADMIN;9
 system;MANAGE;10
