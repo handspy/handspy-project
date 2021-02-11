@@ -20,7 +20,10 @@ import pt.up.hs.project.service.ParticipantService;
 import pt.up.hs.project.service.dto.BulkImportResultDTO;
 import pt.up.hs.project.service.dto.ParticipantBasicDTO;
 import pt.up.hs.project.service.dto.ParticipantDTO;
+import pt.up.hs.project.service.dto.TaskDTO;
 import pt.up.hs.project.web.rest.errors.BadRequestException;
+import pt.up.hs.project.web.rest.vm.ParticipantCopyPayload;
+import pt.up.hs.project.web.rest.vm.TaskCopyPayload;
 
 import javax.validation.Valid;
 import java.io.IOException;
@@ -244,5 +247,25 @@ public class ParticipantResource {
         return ResponseEntity.noContent().headers(
             HeaderUtil.createEntityDeletionAlert(applicationName, true, EntityNames.PARTICIPANT, id.toString())
         ).build();
+    }
+
+    @PostMapping("/participants/{id}/copy")
+    @PreAuthorize(
+        "hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+            "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ') and " +
+            "(not payload.move or hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'MANAGE')) and " +
+            "hasPermission(#payload.projectId, 'pt.up.hs.project.domain.Project', 'WRITE')"
+    )
+    public ResponseEntity<ParticipantDTO> copy(
+        @PathVariable("projectId") Long projectId,
+        @PathVariable("id") Long id,
+        @Valid @RequestBody ParticipantCopyPayload payload
+    ) throws URISyntaxException {
+        log.debug("REST request to copy Participant {} from project {} to project {}", id, projectId, payload.getProjectId());
+        ParticipantDTO result = participantService.copy(projectId, id, payload.getProjectId(), payload.isMove(), payload.getLabelMapping());
+        return ResponseEntity
+            .created(new URI("/api/projects/" + payload.getProjectId() + "/participants/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, EntityNames.PARTICIPANT, result.getId().toString()))
+            .body(result);
     }
 }

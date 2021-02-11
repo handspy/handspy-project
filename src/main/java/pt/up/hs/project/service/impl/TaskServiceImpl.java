@@ -265,6 +265,30 @@ public class TaskServiceImpl implements TaskService {
         taskRepository.deleteByProjectIdAndId(projectId, id);
     }
 
+    @Override
+    public TaskDTO copy(
+        Long projectId, Long id, Long toProjectId, boolean move, Map<Long, Long> labelMapping) {
+        TaskDTO oldTaskDTO = findOne(projectId, id).orElse(null);
+        if (oldTaskDTO == null) {
+            throw new ServiceException(Status.NOT_FOUND, EntityNames.TASK, ErrorKeys.ERR_NOT_FOUND, "Task does not exist");
+        }
+        oldTaskDTO.setId(null);
+        oldTaskDTO.setProjectId(toProjectId);
+        if (!projectId.equals(toProjectId)) {
+            if (oldTaskDTO.getLabels() != null) {
+                oldTaskDTO.setLabels(oldTaskDTO.getLabels().stream().peek(labelDTO -> {
+                    labelDTO.setProjectId(toProjectId);
+                    labelDTO.setId(labelMapping.get(labelDTO.getId()));
+                }).collect(Collectors.toSet()));
+            }
+        }
+        TaskDTO taskDTO = save(toProjectId, oldTaskDTO);
+        if (move) {
+            delete(projectId, id);
+        }
+        return taskDTO;
+    }
+
     private void populateAndSaveLabels(Long projectId, Task task) {
         Set<Label> labels = new HashSet<>();
         for (Label label : task.getLabels()) {

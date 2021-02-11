@@ -1,24 +1,29 @@
 package pt.up.hs.project.service.impl;
 
-import pt.up.hs.project.service.LabelService;
-import pt.up.hs.project.service.ParticipantService;
-import pt.up.hs.project.domain.Participant;
-import pt.up.hs.project.repository.ParticipantRepository;
-import pt.up.hs.project.service.dto.BulkImportResultDTO;
-import pt.up.hs.project.service.dto.ParticipantBasicDTO;
-import pt.up.hs.project.service.dto.ParticipantDTO;
-import pt.up.hs.project.service.dto.TaskBasicDTO;
-import pt.up.hs.project.service.importer.dto.ParticipantCsvDTO;
-import pt.up.hs.project.service.importer.reader.CsvReader;
-import pt.up.hs.project.service.mapper.ParticipantBasicMapper;
-import pt.up.hs.project.service.mapper.ParticipantMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.zalando.problem.Status;
+import pt.up.hs.project.constants.EntityNames;
+import pt.up.hs.project.constants.ErrorKeys;
+import pt.up.hs.project.domain.Label;
+import pt.up.hs.project.domain.Participant;
+import pt.up.hs.project.repository.LabelRepository;
+import pt.up.hs.project.repository.ParticipantRepository;
+import pt.up.hs.project.service.LabelService;
+import pt.up.hs.project.service.ParticipantService;
+import pt.up.hs.project.service.dto.BulkImportResultDTO;
+import pt.up.hs.project.service.dto.LabelDTO;
+import pt.up.hs.project.service.dto.ParticipantBasicDTO;
+import pt.up.hs.project.service.dto.ParticipantDTO;
+import pt.up.hs.project.service.exceptions.ServiceException;
+import pt.up.hs.project.service.importer.dto.ParticipantCsvDTO;
+import pt.up.hs.project.service.importer.reader.CsvReader;
+import pt.up.hs.project.service.mapper.ParticipantBasicMapper;
+import pt.up.hs.project.service.mapper.ParticipantMapper;
 import pt.up.hs.project.utils.Genders;
 import pt.up.hs.project.utils.HandwritingMeans;
 
@@ -40,17 +45,20 @@ public class ParticipantServiceImpl implements ParticipantService {
     private final ParticipantBasicMapper participantBasicMapper;
 
     private final LabelService labelService;
+    private final LabelRepository labelRepository;
 
     public ParticipantServiceImpl(
         ParticipantRepository participantRepository,
         ParticipantMapper participantMapper,
         ParticipantBasicMapper participantBasicMapper,
-        LabelService labelService
+        LabelService labelService,
+        LabelRepository labelRepository
     ) {
         this.participantRepository = participantRepository;
         this.participantMapper = participantMapper;
         this.participantBasicMapper = participantBasicMapper;
         this.labelService = labelService;
+        this.labelRepository = labelRepository;
     }
 
     /**
@@ -65,6 +73,7 @@ public class ParticipantServiceImpl implements ParticipantService {
         log.debug("Request to save Participant {} in project {}", participantDTO, projectId);
         Participant participant = participantMapper.toEntity(participantDTO);
         participant.setProjectId(projectId);
+        populateAndSaveLabels(projectId, participant);
         participant = participantRepository.save(participant);
         return participantMapper.toDto(participant);
     }
@@ -236,5 +245,61 @@ public class ParticipantServiceImpl implements ParticipantService {
     public void delete(Long projectId, Long id) {
         log.debug("Request to delete Participant {} from project {}", id, projectId);
         participantRepository.deleteAllByProjectIdAndId(projectId, id);
+    }
+
+    @Override
+    public ParticipantDTO copy(
+        Long projectId, Long id, Long toProjectId, boolean move, Map<Long, Long> labelMapping) {
+        ParticipantDTO oldParticipantDTO = findOne(projectId, id).orElse(null);
+        if (oldParticipantDTO == null) {
+            throw new ServiceException(Status.NOT_FOUND, EntityNames.PARTICIPANT, ErrorKeys.ERR_NOT_FOUND, "Participant does not exist");
+        }
+        ParticipantDTO participantDTO = new ParticipantDTO();
+        participantDTO.setProjectId(toProjectId);
+        participantDTO.setName(oldParticipantDTO.getName());
+        participantDTO.setBirthdate(oldParticipantDTO.getBirthdate());
+        participantDTO.setGender(oldParticipantDTO.getGender());
+        participantDTO.setHandedness(oldParticipantDTO.getHandedness());
+        if (!projectId.equals(toProjectId)) {
+            if (oldParticipantDTO.getLabels() != null) {
+                participantDTO.setLabels(oldParticipantDTO.getLabels().stream().map(labelDTO -> {
+                    LabelDTO dto = new LabelDTO();
+                    dto.setId(labelMapping.get(labelDTO.getId()));
+                    dto.setProjectId(toProjectId);
+                    dto.setName(labelDTO.getName());
+                    dto.setColor(labelDTO.getColor());
+                    return dto;
+                }).collect(Collectors.toSet()));
+            }
+        }
+        participantDTO = save(toProjectId, participantDTO);
+        if (move) {
+            delete(projectId, id);
+        }
+        return participantDTO;
+    }
+
+    private void populateAndSaveLabels(Long projectId, Participant participant) {
+        Set<Label> labels = new HashSet<>();
+        for (Label label : participant.getLabels()) {
+            label.setProjectId(projectId);
+            if (label.getId() != null) { // existing labels
+                Optional<Label> labelOpt = labelRepository
+                    .findByProjectIdAndId(projectId, label.getId());
+                if (!labelOpt.isPresent()) {
+                    throw new ServiceException(
+                        Status.BAD_REQUEST,
+                        EntityNames.PARTICIPANT,
+                        ErrorKeys.ERR_RELATED_ENTITY_NOT_FOUND,
+                        "The related label does not exist."
+                    );
+                }
+                labels.add(labelOpt.get().addParticipants(participant));
+            } else { // new labels
+                labelRepository.save(label);
+                labels.add(label.addParticipants(participant));
+            }
+        }
+        participant.setLabels(labels);
     }
 }

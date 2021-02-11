@@ -11,8 +11,11 @@ import org.springframework.web.bind.annotation.*;
 import pt.up.hs.project.constants.EntityNames;
 import pt.up.hs.project.constants.ErrorKeys;
 import pt.up.hs.project.service.ProjectService;
+import pt.up.hs.project.service.dto.ParticipantDTO;
 import pt.up.hs.project.service.dto.ProjectDTO;
 import pt.up.hs.project.web.rest.errors.BadRequestException;
+import pt.up.hs.project.web.rest.vm.ParticipantCopyPayload;
+import pt.up.hs.project.web.rest.vm.ProjectCopyPayload;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -144,5 +147,20 @@ public class ProjectResource {
             result.map(projectDTO -> HeaderUtil.createEntityUpdateAlert(applicationName, true, EntityNames.PROJECT, projectDTO.getId().toString())).orElse(null));
     }
 
-
+    @PostMapping("/projects/{id}/copy")
+    @PreAuthorize(
+        "hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+            "hasPermission(#id, 'pt.up.hs.project.domain.Project', 'READ')"
+    )
+    public ResponseEntity<ProjectDTO> copy(
+        @PathVariable("id") Long id,
+        @Valid @RequestBody ProjectCopyPayload payload
+    ) throws URISyntaxException {
+        log.debug("REST request to copy project {}", id);
+        ProjectDTO result = projectService.copy(id, payload.isCopyPermissions(), payload.isMove());
+        return ResponseEntity
+            .created(new URI("/api/projects/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, EntityNames.PROJECT, result.getId().toString()))
+            .body(result);
+    }
 }

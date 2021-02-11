@@ -15,7 +15,7 @@ import java.util.Optional;
  */
 @SuppressWarnings("unused")
 @Repository
-public interface LabelRepository extends JpaRepository<Label, Long> {
+public interface LabelRepository extends CustomRepository<Label, Long> {
 
     Optional<Label> findByProjectIdAndName(@NotNull Long projectId, @NotNull @Size(max = 50) String name);
 

@@ -19,7 +19,7 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "task")
-@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Task extends AbstractAuditingEntity {
 
     private static final long serialVersionUID = 1L;

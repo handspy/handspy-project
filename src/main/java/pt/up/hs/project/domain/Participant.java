@@ -22,7 +22,7 @@ import pt.up.hs.project.domain.enumeration.HandwritingMean;
  */
 @Entity
 @Table(name = "participant")
-@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Participant extends AbstractAuditingEntity {
 
     private static final long serialVersionUID = 1L;

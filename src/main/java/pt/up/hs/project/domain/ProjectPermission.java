@@ -16,7 +16,7 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "project_permission")
-@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class ProjectPermission implements Serializable {
 
     private static final long serialVersionUID = 1L;

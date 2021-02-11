@@ -8,6 +8,7 @@ import pt.up.hs.project.service.dto.TaskDTO;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -102,4 +103,16 @@ public interface TaskService {
      * @param id        the id of the entity.
      */
     void delete(Long projectId, Long id);
+
+    /**
+     * Copy task from a project to another project.
+     *
+     * @param projectId    the ID of the project containing the task.
+     * @param id           the id of the entity.
+     * @param toProjectId  the ID of the project to copy the task to.
+     * @param move         should it be moved?
+     * @param labelMapping correspondence of labels between projects
+     * @return the persisted entity.
+     */
+    TaskDTO copy(Long projectId, Long id, Long toProjectId, boolean move, Map<Long, Long> labelMapping);
 }

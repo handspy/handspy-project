@@ -21,6 +21,7 @@ import pt.up.hs.project.service.dto.BulkImportResultDTO;
 import pt.up.hs.project.service.dto.TaskBasicDTO;
 import pt.up.hs.project.service.dto.TaskDTO;
 import pt.up.hs.project.web.rest.errors.BadRequestException;
+import pt.up.hs.project.web.rest.vm.TaskCopyPayload;
 
 import javax.validation.Valid;
 import java.io.IOException;
@@ -251,5 +252,25 @@ public class TaskResource {
         return ResponseEntity.noContent().headers(
             HeaderUtil.createEntityDeletionAlert(applicationName, true, EntityNames.TASK, id.toString())
         ).build();
+    }
+
+    @PostMapping("/tasks/{id}/copy")
+    @PreAuthorize(
+        "hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+            "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ') and " +
+            "(not payload.move or hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'MANAGE')) and " +
+            "hasPermission(#payload.projectId, 'pt.up.hs.project.domain.Project', 'WRITE')"
+    )
+    public ResponseEntity<TaskDTO> copy(
+        @PathVariable("projectId") Long projectId,
+        @PathVariable("id") Long id,
+        @Valid @RequestBody TaskCopyPayload payload
+    ) throws URISyntaxException {
+        log.debug("REST request to copy Task {} from project {} to project {}", id, projectId, payload.getProjectId());
+        TaskDTO result = taskService.copy(projectId, id, payload.getProjectId(), payload.isMove(), payload.getLabelMapping());
+        return ResponseEntity
+            .created(new URI("/api/projects/" + payload.getProjectId() + "/tasks/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, EntityNames.TASK, result.getId().toString()))
+            .body(result);
     }
 }

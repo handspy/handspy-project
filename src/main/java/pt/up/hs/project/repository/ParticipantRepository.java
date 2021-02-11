@@ -17,7 +17,7 @@ import java.util.Optional;
  * Spring Data repository for the Participant entity.
  */
 @Repository
-public interface ParticipantRepository extends JpaRepository<Participant, Long> {
+public interface ParticipantRepository extends CustomRepository<Participant, Long> {
 
     String SELECT_BY_PROJECT_ID_SEARCH_LABELS =
         "select distinct participant.id from Participant participant left join participant.labels label " +

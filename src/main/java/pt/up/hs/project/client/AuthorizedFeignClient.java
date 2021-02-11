@@ -38,7 +38,7 @@ public @interface AuthorizedFeignClient {
      * Whether 404s should be decoded instead of throwing FeignExceptions.
      * @return true if 404s will be decoded; false otherwise.
      */
-    boolean decode404() default false;
+    boolean decode404() default true;
 
     /**
      * Fallback class for the specified Feign client interface. The fallback class must

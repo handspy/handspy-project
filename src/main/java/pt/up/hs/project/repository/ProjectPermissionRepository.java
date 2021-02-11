@@ -13,7 +13,7 @@ import java.util.List;
  */
 @SuppressWarnings("unused")
 @Repository
-public interface ProjectPermissionRepository extends JpaRepository<ProjectPermission, ProjectPermissionId> {
+public interface ProjectPermissionRepository extends CustomRepository<ProjectPermission, ProjectPermissionId> {
 
     List<ProjectPermission> findAllByIdUserAndIdProjectId(
         @NotNull String user,

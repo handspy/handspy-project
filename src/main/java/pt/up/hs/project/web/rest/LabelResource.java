@@ -13,6 +13,7 @@ import pt.up.hs.project.constants.ErrorKeys;
 import pt.up.hs.project.service.LabelService;
 import pt.up.hs.project.service.dto.LabelDTO;
 import pt.up.hs.project.web.rest.errors.BadRequestException;
+import pt.up.hs.project.web.rest.vm.LabelCopyPayload;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -155,5 +156,25 @@ public class LabelResource {
         return ResponseEntity.noContent()
             .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, EntityNames.LABEL, id.toString()))
             .build();
+    }
+
+    @PostMapping("/labels/{id}/copy")
+    @PreAuthorize(
+        "hasAnyRole('ROLE_USER', 'ROLE_ADVANCED_USER', 'ROLE_ADMIN') and " +
+            "hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'READ') and " +
+            "(not payload.move or hasPermission(#projectId, 'pt.up.hs.project.domain.Project', 'MANAGE')) and " +
+            "hasPermission(#payload.projectId, 'pt.up.hs.project.domain.Project', 'WRITE')"
+    )
+    public ResponseEntity<LabelDTO> copy(
+        @PathVariable("projectId") Long projectId,
+        @PathVariable("id") Long id,
+        @Valid @RequestBody LabelCopyPayload payload
+    ) throws URISyntaxException {
+        log.debug("REST request to copy Label {} from project {} to project {}", id, projectId, payload.getProjectId());
+        LabelDTO result = labelService.copy(projectId, id, payload.getProjectId(), payload.isMove());
+        return ResponseEntity
+            .created(new URI("/api/projects/" + payload.getProjectId() + "/labels/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, EntityNames.LABEL, result.getId().toString()))
+            .body(result);
     }
 }

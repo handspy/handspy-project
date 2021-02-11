@@ -49,4 +49,14 @@ public interface ProjectService {
      * @return the entity.
      */
     Optional<ProjectDTO> delete(Long id);
+
+    /**
+     * Copy project into another project.
+     *
+     * @param id              the id of the entity.
+     * @param copyPermissions copy permissions from the other project.
+     * @param move            should it be moved?
+     * @return                the new project
+     */
+    ProjectDTO copy(Long id, boolean copyPermissions, boolean move);
 }

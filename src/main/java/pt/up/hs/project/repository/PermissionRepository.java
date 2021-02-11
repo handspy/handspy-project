@@ -10,6 +10,6 @@ import org.springframework.stereotype.Repository;
  */
 @SuppressWarnings("unused")
 @Repository
-public interface PermissionRepository extends JpaRepository<Permission, Long> {
+public interface PermissionRepository extends CustomRepository<Permission, Long> {
 
 }

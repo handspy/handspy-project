@@ -18,7 +18,7 @@ import java.util.Optional;
  * Spring Data  repository for the Task entity.
  */
 @Repository
-public interface TaskRepository extends JpaRepository<Task, Long> {
+public interface TaskRepository extends CustomRepository<Task, Long> {
 
     String SELECT_BY_PROJECT_ID_SEARCH_LABELS =
         "select distinct task.id from Task task left join task.labels label " +

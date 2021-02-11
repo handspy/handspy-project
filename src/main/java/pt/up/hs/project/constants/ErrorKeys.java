@@ -8,4 +8,5 @@ public final class ErrorKeys {
     public static final String ERR_RELATED_ENTITY_NOT_FOUND = "error.relatednotfound";
     public static final String ERR_READ_IMPORT = "error.readImport";
     public static final String ERR_UNMODIFIABLE_OWNER_PERMISSION = "error.unmodifiableownerpermission";
+    public static final String ERR_NOT_FOUND = "error.notfound";
 }

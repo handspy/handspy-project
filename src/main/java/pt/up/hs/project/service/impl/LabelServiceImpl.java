@@ -4,10 +4,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.zalando.problem.Status;
+import pt.up.hs.project.constants.EntityNames;
+import pt.up.hs.project.constants.ErrorKeys;
 import pt.up.hs.project.domain.Label;
 import pt.up.hs.project.repository.LabelRepository;
 import pt.up.hs.project.service.LabelService;
 import pt.up.hs.project.service.dto.LabelDTO;
+import pt.up.hs.project.service.exceptions.ServiceException;
 import pt.up.hs.project.service.mapper.LabelMapper;
 
 import java.util.List;
@@ -141,5 +145,22 @@ public class LabelServiceImpl implements LabelService {
             label.getParticipants().parallelStream().forEach(label::removeParticipants);
         }
         labelRepository.deleteByProjectIdAndId(projectId, id);
+    }
+
+    @Override
+    public LabelDTO copy(Long projectId, Long id, Long toProjectId, boolean move) {
+        LabelDTO oldLabelDTO = findOne(projectId, id).orElse(null);
+        if (oldLabelDTO == null) {
+            throw new ServiceException(Status.NOT_FOUND, EntityNames.LABEL, ErrorKeys.ERR_NOT_FOUND, "Label does not exist");
+        }
+        LabelDTO labelDTO = new LabelDTO();
+        labelDTO.setProjectId(toProjectId);
+        labelDTO.setName(oldLabelDTO.getName());
+        labelDTO.setColor(oldLabelDTO.getColor());
+        labelDTO = save(toProjectId, labelDTO);
+        if (move) {
+            delete(projectId, id);
+        }
+        return labelDTO;
     }
 }

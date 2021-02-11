@@ -20,7 +20,7 @@ import pt.up.hs.project.domain.enumeration.ProjectStatus;
  */
 @Entity
 @Table(name = "project")
-@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Project extends AbstractAuditingEntity {
 
     private static final long serialVersionUID = 1L;

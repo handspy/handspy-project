@@ -18,7 +18,7 @@ import java.util.List;
  */
 @SuppressWarnings("unused")
 @Repository
-public interface ProjectRepository extends JpaRepository<Project, Long> {
+public interface ProjectRepository extends CustomRepository<Project, Long> {
 
     @Query(
         value = "select distinct project from Project project join project.permissions permission " +

@@ -43,11 +43,11 @@ ribbon:
 feign:
   hystrix:
     enabled: true
-  # client:
-  #     config:
-  #         default:
-  #             connectTimeout: 5000
-  #             readTimeout: 5000
+  client:
+    config:
+      default:
+        connectTimeout: 10000
+        readTimeout: 10000
 
 # See https://github.com/Netflix/Hystrix/wiki/Configuration
 hystrix:
@@ -147,6 +147,10 @@ spring:
   output:
     ansi:
       console-available: true
+  batch:
+    initialize-schema: never
+    job:
+      enabled: false
 security:
   oauth2:
     client:

@@ -71,4 +71,15 @@ public interface LabelService {
      * @param id the id of the entity.
      */
     void delete(Long projectId, Long id);
+
+    /**
+     * Copy label from a project to another project.
+     *
+     * @param projectId    the ID of the project containing the task.
+     * @param id           the id of the entity.
+     * @param toProjectId  the ID of the project to copy the label to.
+     * @param move         should it be moved?
+     * @return the persisted entity.
+     */
+    LabelDTO copy(Long projectId, Long id, Long toProjectId, boolean move);
 }
